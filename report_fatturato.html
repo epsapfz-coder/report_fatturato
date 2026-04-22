@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EPSA · Report Fatturato Dinamico</title>
+  <title>EPSA · Report Fatturato & Pratiche</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
@@ -35,12 +35,14 @@
       --warning-soft: #fdf4e3;
       --danger: #c5291f;
       --danger-soft: #fdebe9;
+      --violet: #7e22ce;
+      --violet-soft: #f5eeff;
       --radius: 10px;
-      --radius-sm: 6px;
       --shadow-xs: 0 1px 1px rgba(15,23,42,.04);
       --shadow-sm: 0 1px 2px rgba(15,23,42,.05), 0 1px 1px rgba(15,23,42,.03);
       --shadow: 0 2px 6px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.04);
       --shadow-lg: 0 16px 40px -8px rgba(15,23,42,.15), 0 4px 12px rgba(15,23,42,.06);
+      --shadow-xl: 0 24px 60px -12px rgba(15,23,42,.25), 0 8px 20px rgba(15,23,42,.08);
     }
 
     * { box-sizing: border-box; }
@@ -57,7 +59,7 @@
     }
 
     button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
-    input { font: inherit; color: inherit; }
+    input, select { font: inherit; color: inherit; }
     a { color: var(--accent); text-decoration: none; }
 
     /* --- Layout --- */
@@ -92,7 +94,6 @@
     }
     .file-status strong { color: #e2e8f0; font-weight: 600; }
     .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,.15); }
-    .dot.warn { background: var(--warning); box-shadow: 0 0 0 3px rgba(245,158,11,.2); }
 
     .btn {
       display: inline-flex; align-items: center; gap: 6px;
@@ -108,12 +109,13 @@
     .btn-ghost:hover { background: rgba(255,255,255,.08); }
     .btn-outline { background: var(--card); color: var(--ink-2); border: 1px solid var(--line); }
     .btn-outline:hover { background: var(--bg-soft); border-color: #cbd5e1; }
+    .btn-outline:disabled { opacity: .4; cursor: not-allowed; }
     .btn-sm { padding: 5px 9px; font-size: 11px; }
 
     /* --- Upload --- */
     .upload-wrap { padding: 48px 28px; display: grid; place-items: center; flex: 1; }
     .upload {
-      max-width: 540px; width: 100%;
+      max-width: 560px; width: 100%;
       background: var(--card);
       border: 1.5px dashed #cbd5e1;
       border-radius: 16px;
@@ -133,6 +135,22 @@
     .upload-cta { margin-top: 14px; display: flex; justify-content: center; gap: 10px; }
     .upload-hint { margin-top: 16px; font-size: 11px; color: var(--muted-2); font-family: 'JetBrains Mono', monospace; }
     input[type="file"] { display: none; }
+
+    .req-list {
+      text-align: left;
+      margin-top: 20px;
+      padding: 14px 16px;
+      background: var(--bg-soft);
+      border-radius: 8px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .req-list strong { color: var(--ink-2); font-weight: 600; }
+    .req-list code {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      background: white; padding: 1px 5px; border-radius: 3px;
+      border: 1px solid var(--line);
+    }
 
     .err {
       background: var(--danger-soft); color: var(--danger);
@@ -166,42 +184,36 @@
       white-space: nowrap;
     }
     .chip:hover { border-color: #94a3b8; background: var(--bg-soft); }
-    .chip.active {
-      background: var(--ink);
-      border-color: var(--ink);
-      color: #fff;
-    }
+    .chip.active { background: var(--ink); border-color: var(--ink); color: #fff; }
     .chip.active:hover { background: var(--ink-2); }
 
-    .filter-divider { width: 1px; background: var(--line); align-self: stretch; margin: 0 4px; }
-
-    .filter-compact input[type="month"] {
+    .filter-compact input[type="month"],
+    .filter-compact input[type="text"],
+    .filter-compact select {
       padding: 5px 8px; border: 1px solid var(--line);
       border-radius: 6px; font-size: 11px;
       background: var(--card); outline: none;
-      width: 130px;
     }
-    .filter-compact input[type="month"]:focus { border-color: var(--accent-2); }
-    .filter-compact input[type="text"] {
-      padding: 5px 10px; border: 1px solid var(--line);
-      border-radius: 6px; font-size: 11px;
-      background: var(--card); outline: none; min-width: 200px;
-    }
-    .filter-compact input[type="text"]:focus { border-color: var(--accent-2); }
+    .filter-compact input[type="month"] { width: 130px; }
+    .filter-compact input[type="text"] { min-width: 200px; }
+    .filter-compact input:focus, .filter-compact select:focus { border-color: var(--accent-2); }
 
     .filter-actions {
       display: flex; align-items: flex-end; gap: 8px; margin-left: auto;
     }
 
-    .toggle {
-      display: inline-flex; align-items: center; gap: 7px;
-      font-size: 11px; font-weight: 500;
-      color: var(--muted); cursor: pointer;
-      padding: 4px 10px;
-      border-radius: 6px;
-      border: 1px solid var(--line);
+    .seg {
+      display: inline-flex; border: 1px solid var(--line);
+      border-radius: 6px; overflow: hidden;
+      background: var(--card);
     }
-    .toggle input { margin: 0; }
+    .seg button {
+      padding: 4px 9px; font-size: 11px; font-weight: 600;
+      color: var(--muted); border-right: 1px solid var(--line);
+    }
+    .seg button:last-child { border-right: none; }
+    .seg button.active { background: var(--ink); color: #fff; }
+    .seg button:hover:not(.active) { background: var(--bg-soft); color: var(--ink-2); }
 
     .filter-summary {
       font-size: 11px; color: var(--muted);
@@ -218,10 +230,7 @@
       padding: 0 28px;
       display: flex; gap: 0;
       overflow-x: auto;
-      position: sticky; top: calc(61px + 69px); z-index: 30;
     }
-    @media (max-width: 1200px) { .tabs { top: auto; position: static; } }
-
     .tab-btn {
       padding: 11px 14px;
       font-size: 12px; font-weight: 600;
@@ -267,6 +276,7 @@
     .kpi.kpi-alt::before { background: var(--success); }
     .kpi.kpi-warn::before { background: var(--warning); }
     .kpi.kpi-danger::before { background: var(--danger); }
+    .kpi.kpi-violet::before { background: var(--violet); }
     .kpi.kpi-neutral::before { background: #cbd5e1; }
     .kpi-label {
       font-size: 10px; font-weight: 700; letter-spacing: .05em;
@@ -296,21 +306,11 @@
     .card-title { font-size: 13px; font-weight: 700; color: var(--ink); margin: 0; letter-spacing: -.005em; }
     .card-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .card-actions { display: flex; gap: 6px; align-items: center; }
-    .seg {
-      display: inline-flex; border: 1px solid var(--line);
-      border-radius: 6px; overflow: hidden;
-      background: var(--card);
-    }
-    .seg button {
-      padding: 4px 9px; font-size: 11px; font-weight: 600;
-      color: var(--muted); border-right: 1px solid var(--line);
-    }
-    .seg button:last-child { border-right: none; }
-    .seg button.active { background: var(--ink); color: #fff; }
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
-    @media (max-width: 1000px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+    .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+    @media (max-width: 1100px) { .grid-2, .grid-3, .grid-2-1 { grid-template-columns: 1fr; } }
 
     /* --- Tables --- */
     .tbl-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
@@ -324,6 +324,7 @@
       color: var(--muted);
       border-bottom: 1px solid var(--line);
       white-space: nowrap;
+      z-index: 1;
     }
     .tbl th.sortable { cursor: pointer; user-select: none; }
     .tbl th.sortable:hover { color: var(--ink-2); background: #e2e8f0; }
@@ -334,11 +335,14 @@
       white-space: nowrap;
     }
     .tbl tr:last-child td { border-bottom: none; }
-    .tbl tr:hover td { background: var(--bg-soft); }
+    .tbl tbody tr:hover td { background: var(--bg-soft); }
+    .tbl tbody tr.clickable { cursor: pointer; }
+    .tbl tbody tr.clickable:hover td { background: var(--accent-soft); }
     .tbl .rank { color: var(--muted); font-variant-numeric: tabular-nums; width: 28px; }
-    .tbl .truncate { max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
+    .tbl .truncate { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
     .tbl .num strong { font-weight: 700; }
-    .tbl .neg-row td { color: var(--danger); }
+    .tbl .neg { color: var(--danger); }
+    .tbl .pos { color: var(--success); }
 
     .bar-cell {
       position: relative; min-width: 100px;
@@ -349,7 +353,7 @@
       background: linear-gradient(90deg, var(--accent-2), var(--accent));
       border-radius: 3px; opacity: .15;
     }
-    .bar-cell .bar.neg { background: linear-gradient(90deg, #fca5a5, var(--danger)); }
+    .bar-cell .bar.neg-bar { background: linear-gradient(90deg, #fca5a5, var(--danger)); }
     .bar-cell span { position: relative; z-index: 1; padding-right: 6px; font-variant-numeric: tabular-nums; }
 
     .badge {
@@ -359,27 +363,20 @@
       font-size: 10px; font-weight: 600;
       background: var(--bg-soft); color: var(--muted);
     }
-    .badge.rec { background: var(--accent-soft); color: var(--accent); }
-    .badge.back { background: #faf5ff; color: #7e22ce; }
-    .badge.pos { background: var(--success-soft); color: var(--success); }
-    .badge.neg { background: var(--danger-soft); color: var(--danger); }
+    .badge.ftt { background: var(--accent-soft); color: var(--accent); }
+    .badge.nc { background: var(--danger-soft); color: var(--danger); }
+    .badge.rec { background: var(--success-soft); color: var(--success); }
+    .badge.back { background: var(--violet-soft); color: var(--violet); }
+    .badge.open { background: var(--warning-soft); color: var(--warning); }
+    .badge.closed { background: var(--success-soft); color: var(--success); }
+    .badge.outlier { background: #fef2f2; color: #9b1c1c; }
 
-    /* --- Empty states --- */
     .empty {
       text-align: center; padding: 40px 20px;
       color: var(--muted); font-size: 13px;
     }
 
     /* --- Tooltip --- */
-    .rc-tooltip {
-      background: var(--ink) !important;
-      color: white !important;
-      border-radius: 8px !important;
-      padding: 8px 12px !important;
-      font-size: 12px !important;
-      box-shadow: var(--shadow-lg) !important;
-      border: none !important;
-    }
     .custom-tt {
       background: #0b1220; color: #fff;
       padding: 10px 12px; border-radius: 8px;
@@ -390,26 +387,87 @@
     .custom-tt .tt-row { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; }
     .custom-tt .tt-row .k { color: #94a3b8; }
     .custom-tt .tt-row .v { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .custom-tt .tt-click { margin-top: 6px; padding-top: 6px; border-top: 1px solid #334155; color: #93c5fd; font-size: 10px; }
 
     .chart-legend {
       display: flex; flex-wrap: wrap; gap: 10px 16px;
       font-size: 11px; color: var(--muted);
+      margin-top: 8px;
     }
-    .chart-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    .chart-legend-item { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; padding: 2px 4px; border-radius: 4px; }
+    .chart-legend-item:hover { background: var(--bg-soft); }
     .chart-legend-dot { width: 8px; height: 8px; border-radius: 2px; }
 
     .muted { color: var(--muted); }
+    .mono { font-family: 'JetBrains Mono', monospace; }
 
     .pagination { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; font-size: 11px; color: var(--muted); }
     .pagination .pager { display: flex; gap: 4px; }
 
-    .scroll-h { overflow-x: auto; }
+    /* --- Modal --- */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(15,23,42,.5); backdrop-filter: blur(4px);
+      display: grid; place-items: center;
+      z-index: 100; padding: 20px;
+      animation: fadeIn .15s ease;
+    }
+    .modal {
+      background: var(--card); border-radius: 12px;
+      width: 100%; max-width: 1200px; max-height: 90vh;
+      display: flex; flex-direction: column;
+      box-shadow: var(--shadow-xl);
+      overflow: hidden;
+      animation: slideUp .2s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
-    /* Scrollbar */
+    .modal-head {
+      padding: 18px 24px; border-bottom: 1px solid var(--line);
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    }
+    .modal-head h3 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+    .modal-head p { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+    .modal-body { padding: 18px 24px; overflow: auto; flex: 1; }
+    .modal-foot {
+      padding: 12px 24px; border-top: 1px solid var(--line);
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg-soft); font-size: 11px; color: var(--muted);
+    }
+    .icon-btn {
+      width: 28px; height: 28px;
+      display: grid; place-items: center;
+      border-radius: 6px; color: var(--muted);
+      transition: all .12s ease;
+    }
+    .icon-btn:hover { background: var(--bg-soft); color: var(--ink-2); }
+
+    /* --- Charts interactive --- */
+    .recharts-bar-rectangle, .recharts-pie-sector, .recharts-layer { cursor: pointer; }
+    .recharts-tooltip-wrapper { outline: none !important; }
+
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* --- Histogram custom bars --- */
+    .hist { display: flex; align-items: flex-end; gap: 2px; height: 160px; margin-top: 8px; padding: 0 4px; }
+    .hist-bar { flex: 1; background: linear-gradient(180deg, var(--accent-2), var(--accent)); border-radius: 3px 3px 0 0; position: relative; transition: all .15s; cursor: pointer; min-height: 2px; }
+    .hist-bar:hover { opacity: .8; transform: translateY(-2px); }
+    .hist-axis { display: flex; gap: 2px; padding: 4px; font-size: 9px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+    .hist-axis span { flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .drill-hint {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10px; color: var(--accent);
+      font-weight: 500;
+      padding: 3px 8px;
+      background: var(--accent-soft);
+      border-radius: 10px;
+    }
+    .drill-hint::before { content: '→'; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -419,31 +477,35 @@
     const { useState, useMemo, useCallback, useEffect, useRef } = React;
     const {
       BarChart, Bar, LineChart, Line, AreaChart, Area,
-      PieChart, Pie, Cell, ComposedChart,
-      XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList
+      PieChart, Pie, Cell, ComposedChart, ScatterChart, Scatter, ZAxis,
+      XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, ReferenceLine
     } = Recharts;
 
-    // -------- Constants --------
+    // ============== Constants ==============
     const MONTHS_IT = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
     const PALETTE = [
       '#1e40af', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b',
       '#10b981', '#06b6d4', '#6366f1', '#f43f5e', '#84cc16',
       '#a855f7', '#eab308', '#0ea5e9', '#22c55e', '#fb923c'
     ];
+    const OUTLIER_DATE = '2000-01-01';
 
-    // -------- Formatters --------
+    // ============== Formatters ==============
     const fmtEur = (v, d=0) => new Intl.NumberFormat('it-IT', { style:'currency', currency:'EUR', maximumFractionDigits:d, minimumFractionDigits:d }).format(v || 0);
     const fmtEurShort = (v) => {
       const n = Number(v) || 0;
       const a = Math.abs(n);
       if (a >= 1e6) return (n/1e6).toLocaleString('it-IT', {maximumFractionDigits:1}) + 'M €';
-      if (a >= 1e3) return Math.round(n/1e3) + 'k €';
+      if (a >= 1e3) return Math.round(n/1e3).toLocaleString('it-IT') + 'k €';
       return fmtEur(n);
     };
     const fmtNum = (v) => new Intl.NumberFormat('it-IT').format(v || 0);
+    const fmtDec = (v, d=1) => new Intl.NumberFormat('it-IT', { maximumFractionDigits: d, minimumFractionDigits: d }).format(v || 0);
     const fmtPct = (v, d=1) => new Intl.NumberFormat('it-IT', { style:'percent', maximumFractionDigits:d }).format(v || 0);
+    const fmtDays = (v) => v == null ? '—' : `${fmtDec(v, 0)} gg`;
+    const fmtHours = (v) => v == null ? '—' : `${fmtDec(v, 1)} h`;
 
-    // -------- Date utils --------
+    // ============== Date utils ==============
     const parseDate = (v) => {
       if (v == null || v === '') return null;
       if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
@@ -451,20 +513,63 @@
       const d = new Date(v);
       return isNaN(d.getTime()) ? null : d;
     };
+    const isoDate = (d) => d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : '';
+    const formatDate = (d) => d ? d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
     const monthKey = (d) => d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` : '';
     const monthLabel = (k) => { if (!k) return ''; const [y,m] = k.split('-'); return `${MONTHS_IT[+m-1]} '${y.slice(2)}`; };
     const monthLabelLong = (k) => { if (!k) return ''; const [y,m] = k.split('-'); return `${MONTHS_IT[+m-1]} ${y}`; };
     const fromMonthInput = (s) => { if (!s) return null; const [y,m] = s.split('-'); return new Date(+y, +m-1, 1); };
-    const toMonthInput = (d) => d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` : '';
+    const isOutlier = (d) => d && isoDate(d) === OUTLIER_DATE;
+    const daysBetween = (from, to) => {
+      if (!from || !to) return null;
+      return Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
+    };
 
-    // -------- Data processing --------
-    const TARGET_HEADERS = ['FY','COMPANY','INVOICED'];
+    // ============== Data loading ==============
+    const KEYS = {
+      FY: ['FY'],
+      NEW_BACK: ['NEW_BACK', 'NEW-BACK'],
+      TIPO_DOC: ['TIPO DOC', 'TIPO_DOC', 'TIPODOC'],
+      COMPANY: ['COMPANY'],
+      GRUPPO: ['GRUPPO'],
+      LINES: ['LINES'],
+      LINES_PRECISO: ['LINES PRECISO', 'LINES_PRECISO'],
+      ID_PRATICA: ['ID PRATICA', 'ID_PRATICA'],
+      SALES: ['SALES'],
+      CONSULTANT: ['CONSULTANT'],
+      TYPOLOGY: ['TYPOLOGY'],
+      INVOICED: ['INVOICED'],
+      MONTH: ['MONTH'],
+      TYPE_FRANCE: ['Type France', 'TYPE FRANCE'],
+      CONTRIBUTO: ['Contributo ottenuto', 'CONTRIBUTO OTTENUTO'],
+      FAMILY: ['FAMILY'],
+      SERVICE_MODE: ['SERVICE MODE', 'SERVICE_MODE'],
+      ORE: ['ORE LAVORATE', 'ORE_LAVORATE'],
+      DATA_AVVIO: ['Data avvio attività', 'DATA_AVVIO_ATTIVITA', 'DATA AVVIO ATTIVITÀ', 'DATA AVVIO ATTIVITA'],
+      DATA_CHIUSURA: ['Data chiusura effettiva', 'DATA_CHIUSURA_EFFETTIVA', 'DATA CHIUSURA EFFETTIVA'],
+    };
+
+    const findKey = (headers, alts) => {
+      const headersLower = headers.map(h => String(h).toLowerCase().trim());
+      for (const alt of alts) {
+        const idx = headersLower.indexOf(String(alt).toLowerCase().trim());
+        if (idx !== -1) return headers[idx];
+      }
+      return null;
+    };
+
+    const REQUIRED = ['FY', 'COMPANY', 'INVOICED', 'ID_PRATICA'];
+
     const findHeaderRow = (rawRows) => {
       for (let i = 0; i < Math.min(15, rawRows.length); i++) {
         const r = rawRows[i] || [];
         const strs = r.map(c => (c==null?'':String(c).trim()));
-        const found = TARGET_HEADERS.every(h => strs.includes(h));
-        if (found) return i;
+        let matches = 0;
+        for (const key of REQUIRED) {
+          const alts = KEYS[key];
+          if (alts.some(a => strs.includes(a))) matches++;
+        }
+        if (matches === REQUIRED.length) return i;
       }
       return -1;
     };
@@ -479,42 +584,184 @@
       const sheet = wb.Sheets[target];
       const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null, raw: true });
       const hIdx = findHeaderRow(rawRows);
-      if (hIdx === -1) throw new Error(`Intestazione non trovata nel foglio "${target}". Sono richieste le colonne FY, COMPANY, INVOICED.`);
+      if (hIdx === -1) throw new Error(`Intestazione non trovata nel foglio "${target}". Sono richieste le colonne FY, COMPANY, ID PRATICA, INVOICED.`);
       const headers = rawRows[hIdx].map(h => (h == null ? '' : String(h).trim()));
-      const out = [];
+
+      // Mappa chiavi logiche → chiavi reali nel file
+      const keyMap = {};
+      for (const [logic, alts] of Object.entries(KEYS)) {
+        keyMap[logic] = findKey(headers, alts);
+      }
+
+      const rows = [];
       for (let i = hIdx + 1; i < rawRows.length; i++) {
         const row = rawRows[i];
         if (!row || row.every(c => c == null || c === '')) continue;
         const obj = {};
         headers.forEach((h, j) => { obj[h] = row[j]; });
-        if (!obj.FY || !obj.COMPANY) continue;
-        obj.INVOICED = Number(obj.INVOICED) || 0;
-        obj['Contributo ottenuto'] = Number(obj['Contributo ottenuto']) || 0;
-        obj.MONTH = parseDate(obj.MONTH);
-        obj.__mk = monthKey(obj.MONTH);
-        out.push(obj);
+        const fy = obj[keyMap.FY];
+        const company = obj[keyMap.COMPANY];
+        if (!fy || !company) continue;
+        const r = {
+          fy: String(fy).trim(),
+          newBack: keyMap.NEW_BACK ? (obj[keyMap.NEW_BACK] ? String(obj[keyMap.NEW_BACK]).trim() : null) : null,
+          tipoDoc: keyMap.TIPO_DOC ? (obj[keyMap.TIPO_DOC] ? String(obj[keyMap.TIPO_DOC]).trim().toUpperCase() : null) : null,
+          company: String(company).trim(),
+          gruppo: keyMap.GRUPPO ? (obj[keyMap.GRUPPO] ? String(obj[keyMap.GRUPPO]).trim() : null) : null,
+          lines: keyMap.LINES ? (obj[keyMap.LINES] ? String(obj[keyMap.LINES]).trim() : null) : null,
+          linesPreciso: keyMap.LINES_PRECISO ? (obj[keyMap.LINES_PRECISO] ? String(obj[keyMap.LINES_PRECISO]).trim() : null) : null,
+          idPratica: keyMap.ID_PRATICA ? (obj[keyMap.ID_PRATICA] ? String(obj[keyMap.ID_PRATICA]).trim() : null) : null,
+          sales: keyMap.SALES ? (obj[keyMap.SALES] ? String(obj[keyMap.SALES]).trim() : null) : null,
+          consultant: keyMap.CONSULTANT ? (obj[keyMap.CONSULTANT] ? String(obj[keyMap.CONSULTANT]).trim() : null) : null,
+          typology: keyMap.TYPOLOGY ? (obj[keyMap.TYPOLOGY] ? String(obj[keyMap.TYPOLOGY]).trim() : null) : null,
+          invoiced: Number(obj[keyMap.INVOICED]) || 0,
+          month: parseDate(obj[keyMap.MONTH]),
+          typeFrance: keyMap.TYPE_FRANCE ? (obj[keyMap.TYPE_FRANCE] ? String(obj[keyMap.TYPE_FRANCE]).trim() : null) : null,
+          contributo: keyMap.CONTRIBUTO ? (Number(obj[keyMap.CONTRIBUTO]) || 0) : 0,
+          family: keyMap.FAMILY ? (obj[keyMap.FAMILY] && obj[keyMap.FAMILY] !== 0 ? String(obj[keyMap.FAMILY]).trim() : 'n.d.') : 'n.d.',
+          serviceMode: keyMap.SERVICE_MODE ? (obj[keyMap.SERVICE_MODE] && obj[keyMap.SERVICE_MODE] !== 0 ? String(obj[keyMap.SERVICE_MODE]).trim() : 'n.d.') : 'n.d.',
+          ore: keyMap.ORE ? (Number(obj[keyMap.ORE]) || 0) : 0,
+          dataAvvio: keyMap.DATA_AVVIO ? parseDate(obj[keyMap.DATA_AVVIO]) : null,
+          dataChiusura: keyMap.DATA_CHIUSURA ? parseDate(obj[keyMap.DATA_CHIUSURA]) : null,
+        };
+        // Desume TIPO_DOC dal segno se mancante
+        if (!r.tipoDoc) r.tipoDoc = r.invoiced < 0 ? 'NC' : 'FTT';
+        r.__mk = monthKey(r.month);
+        rows.push(r);
       }
-      return { rows: out, sheet: target, total: wb.SheetNames };
+      return { rows, sheet: target, headers, keyMap };
     };
 
-    // -------- Group by util --------
-    const groupBy = (arr, keyFn) => {
+    // ============== Aggregation: docs → pratiche ==============
+    // Aggregates all rows (documents) into practice-level records.
+    // Logic:
+    //   - netto economico = somma algebrica INVOICED (FTT+, NC-)
+    //   - doc di riferimento = ultima FTT cronologica (MONTH desc); fallback: ultima riga
+    //   - attributi pratica (ore, date, sales, consultant, typology...) = primo valore costante
+    //   - durata = dataChiusura - dataAvvio (null se outlier o mancante)
+    const aggregatePratiche = (rows) => {
+      const map = new Map();
+      for (const r of rows) {
+        const key = r.idPratica || `__unkeyed_${r.company}_${r.lines}_${r.__mk}_${Math.random().toString(36).slice(2,8)}`;
+        let p = map.get(key);
+        if (!p) {
+          p = {
+            idPratica: r.idPratica || '(senza ID)',
+            company: r.company,
+            gruppo: r.gruppo,
+            lines: r.lines,
+            linesPreciso: r.linesPreciso,
+            sales: r.sales,
+            consultant: r.consultant,
+            typology: r.typology,
+            family: r.family,
+            typeFrance: r.typeFrance,
+            serviceMode: r.serviceMode,
+            newBack: r.newBack,
+            fy: r.fy,
+            contributo: r.contributo,
+            ore: r.ore,
+            dataAvvio: r.dataAvvio,
+            dataChiusura: r.dataChiusura,
+            // aggregated
+            netto: 0,
+            totFtt: 0,
+            totNc: 0,
+            nFtt: 0,
+            nNc: 0,
+            nDocs: 0,
+            hasNc: false,
+            docs: [],
+            lastFttDate: null,
+            lastFttMk: null,
+            lastFtt: null,  // doc di riferimento
+            firstFyAppearance: r.fy,
+            lastFyAppearance: r.fy,
+          };
+          map.set(key, p);
+        }
+        // accumulate
+        p.netto += r.invoiced;
+        p.nDocs += 1;
+        p.docs.push(r);
+        if (r.tipoDoc === 'NC') {
+          p.totNc += r.invoiced;
+          p.nNc += 1;
+          p.hasNc = true;
+        } else {
+          p.totFtt += r.invoiced;
+          p.nFtt += 1;
+          // ultima FTT cronologica (by MONTH, tiebreaker by invoiced desc)
+          const t = r.month ? r.month.getTime() : 0;
+          const currentT = p.lastFttDate ? p.lastFttDate.getTime() : -Infinity;
+          if (t > currentT || (t === currentT && r.invoiced > (p.lastFtt?.invoiced || -Infinity))) {
+            p.lastFttDate = r.month;
+            p.lastFttMk = r.__mk;
+            p.lastFtt = r;
+          }
+        }
+        // Keep the "best" non-null attribute values (prefer FTT data over NC)
+        if (r.tipoDoc !== 'NC') {
+          if (!p.dataAvvio && r.dataAvvio) p.dataAvvio = r.dataAvvio;
+          if (!p.dataChiusura && r.dataChiusura) p.dataChiusura = r.dataChiusura;
+        }
+        if (r.fy) {
+          if (!p.firstFyAppearance || r.fy < p.firstFyAppearance) p.firstFyAppearance = r.fy;
+          if (!p.lastFyAppearance || r.fy > p.lastFyAppearance) p.lastFyAppearance = r.fy;
+        }
+      }
+      // post-process
+      const result = [];
+      for (const p of map.values()) {
+        p.docs.sort((a,b) => (a.month?.getTime() || 0) - (b.month?.getTime() || 0));
+        p.avvioIsOutlier = isOutlier(p.dataAvvio);
+        // durata (esclusi outlier)
+        if (!p.avvioIsOutlier && p.dataAvvio && p.dataChiusura) {
+          p.durataGiorni = daysBetween(p.dataAvvio, p.dataChiusura);
+        } else {
+          p.durataGiorni = null;
+        }
+        p.isChiusa = !!p.dataChiusura;
+        p.eurPerOra = p.ore > 0 ? p.netto / p.ore : null;
+        // Il doc di riferimento: ultima FTT, se assente prendi ultimo doc qualsiasi
+        if (!p.lastFtt) {
+          const last = p.docs[p.docs.length - 1];
+          p.lastFttDate = last?.month;
+          p.lastFttMk = last?.__mk;
+          p.lastFtt = last;
+        }
+        result.push(p);
+      }
+      return result;
+    };
+
+    // Group by util (works on any array, produces {key, value, count, ...})
+    const groupBy = (arr, keyFn, valFn = r => r.netto) => {
       const m = new Map();
       for (const r of arr) {
         const k = keyFn(r);
         if (k == null || k === '') continue;
-        const e = m.get(k) || { key: k, value: 0, positive: 0, negative: 0, count: 0, contribution: 0 };
-        const v = r.INVOICED || 0;
-        e.value += v;
-        if (v >= 0) e.positive += v; else e.negative += v;
+        const e = m.get(k) || { key: k, value: 0, count: 0, ore: 0, netto: 0, totFtt: 0, totNc: 0, contributo: 0, durataSum: 0, durataN: 0 };
+        e.value += valFn(r);
+        e.netto += r.netto || 0;
+        e.totFtt += r.totFtt || 0;
+        e.totNc += r.totNc || 0;
         e.count += 1;
-        e.contribution += (r['Contributo ottenuto'] || 0);
+        e.ore += r.ore || 0;
+        e.contributo += r.contributo || 0;
+        if (r.durataGiorni != null) { e.durataSum += r.durataGiorni; e.durataN += 1; }
         m.set(k, e);
+      }
+      // compute averages
+      for (const e of m.values()) {
+        e.durataMedia = e.durataN > 0 ? e.durataSum / e.durataN : null;
+        e.avgOre = e.count > 0 ? e.ore / e.count : 0;
+        e.eurPerOra = e.ore > 0 ? e.netto / e.ore : null;
       }
       return Array.from(m.values());
     };
 
-    // ============== Components ==============
+    // ============== UI Components ==============
 
     const Icon = ({ name, size = 16 }) => {
       const paths = {
@@ -522,21 +769,25 @@
         file: 'M14 3v5h5M9 3h5l5 5v12a2 2 0 01-2 2H9a2 2 0 01-2-2V5a2 2 0 012-2z',
         chart: 'M3 3v18h18M8 13v5M13 9v9M18 5v13',
         users: 'M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75',
-        package: 'M12 2l9 5v10l-9 5-9-5V7l9-5zM3.3 7l8.7 5 8.7-5M12 22V12',
-        layers: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5',
+        briefcase: 'M20 7H4a2 2 0 00-2 2v11a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16',
+        clock: 'M12 22a10 10 0 100-20 10 10 0 000 20zM12 6v6l4 2',
+        hourglass: 'M6 2h12M6 22h12M6 2v4a6 6 0 006 6 6 6 0 006-6V2M6 22v-4a6 6 0 016-6 6 6 0 016 6v4',
+        receipt: 'M21 9v10a2 2 0 01-2 2H5a2 2 0 01-2-2V9m6-5h6a2 2 0 012 2v2H7V6a2 2 0 012-2zM3 9l9-6 9 6',
         table: 'M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18',
-        filter: 'M3 4h18l-7 8v7l-4-2v-5L3 4z',
         x: 'M18 6L6 18M6 6l12 12',
         search: 'M21 21l-4.35-4.35M17 10.5A6.5 6.5 0 1010.5 17 6.5 6.5 0 0017 10.5z',
         download: 'M12 3v12m0 0l-5-5m5 5l5-5M4 21h16',
         trend: 'M22 7L13.5 15.5 8.5 10.5 2 17M16 7h6v6',
         award: 'M12 15a7 7 0 100-14 7 7 0 000 14zM8.21 13.89L7 22l5-3 5 3-1.21-8.11',
-        euro: 'M21 11a8 8 0 01-14.83 4M3 14c0-5 4-9 9-9m-8 1h7M4 10h7'
+        layers: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5',
+        package: 'M12 2l9 5v10l-9 5-9-5V7l9-5zM3.3 7l8.7 5 8.7-5M12 22V12',
+        euro: 'M21 11a8 8 0 01-14.83 4M3 14c0-5 4-9 9-9m-8 1h7M4 10h7',
+        eye: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 15a3 3 0 100-6 3 3 0 000 6z',
+        alert: 'M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z',
       };
-      const d = paths[name];
       return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d={d} />
+          <path d={paths[name]} />
         </svg>
       );
     };
@@ -567,13 +818,18 @@
             </div>
             <div className="upload-hint">.xlsx · .xlsm · elaborazione locale nel browser</div>
             <input ref={inputRef} type="file" accept=".xlsx,.xlsm,.xls" onChange={e => e.target.files[0] && onFile(e.target.files[0])} />
+            <div className="req-list">
+              <strong>Campi previsti sul foglio:</strong><br/>
+              <code>FY</code> · <code>TIPO DOC</code> <span className="muted">(FTT/NC)</span> · <code>COMPANY</code> · <code>ID PRATICA</code> · <code>SALES</code> · <code>CONSULTANT</code> · <code>TYPOLOGY</code> · <code>INVOICED</code> · <code>MONTH</code> · <code>ORE LAVORATE</code> · <code>Data avvio attività</code> · <code>Data chiusura effettiva</code>
+              <br/><br/>
+              <span className="muted">I record con <code>Data avvio = 01/01/2000</code> sono trattati come outlier ed esclusi dal calcolo dei tempi medi di lavorazione.</span>
+            </div>
             {error && <div className="err">{error}</div>}
           </div>
         </div>
       );
     };
 
-    // --- Chips multi-select ---
     const ChipSelect = ({ options, value, onChange, allLabel = 'Tutti' }) => {
       const toggle = (v) => {
         if (value.includes(v)) onChange(value.filter(x => x !== v));
@@ -589,7 +845,6 @@
       );
     };
 
-    // --- KPI card ---
     const Kpi = ({ label, value, sub, variant, subVariant }) => (
       <div className={`kpi ${variant ? 'kpi-' + variant : ''}`}>
         <div className="kpi-label">{label}</div>
@@ -598,8 +853,7 @@
       </div>
     );
 
-    // --- Tooltip personalizzato ---
-    const TT = ({ active, payload, label, title, prefix }) => {
+    const TT = ({ active, payload, label, title, valueFmt = fmtEur, clickable = false }) => {
       if (!active || !payload || !payload.length) return null;
       return (
         <div className="custom-tt">
@@ -607,117 +861,233 @@
           {payload.map((p, i) => (
             <div className="tt-row" key={i}>
               <span className="k" style={{color: p.color || p.stroke || '#94a3b8'}}>■ {p.name}</span>
-              <span className="v">{prefix === 'num' ? fmtNum(p.value) : fmtEur(p.value)}</span>
+              <span className="v">{valueFmt(p.value)}</span>
             </div>
           ))}
+          {clickable && <div className="tt-click">Click per dettaglio pratiche →</div>}
         </div>
       );
     };
 
-    // --- Tabella con barra proporzionale ---
-    const RankingTable = ({ data, nameKey = 'key', showCount = true, showAvg = false, showContribution = false, maxRows = null, colorByRank = false }) => {
-      const rows = maxRows ? data.slice(0, maxRows) : data;
-      const max = Math.max(...rows.map(r => Math.abs(r.value)), 1);
-      const total = rows.reduce((s,r) => s + r.value, 0);
+    // ============== Practice Detail Modal ==============
+
+    const PraticheModal = ({ title, subtitle, pratiche, onClose }) => {
+      const [sortBy, setSortBy] = useState('netto');
+      const [sortDir, setSortDir] = useState('desc');
+
+      const sorted = useMemo(() => {
+        const arr = [...pratiche];
+        arr.sort((a,b) => {
+          let va = a[sortBy], vb = b[sortBy];
+          if (va instanceof Date) va = va.getTime();
+          if (vb instanceof Date) vb = vb.getTime();
+          if (typeof va === 'number' && typeof vb === 'number') return sortDir === 'asc' ? va - vb : vb - va;
+          va = va == null ? '' : String(va); vb = vb == null ? '' : String(vb);
+          return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+        });
+        return arr;
+      }, [pratiche, sortBy, sortDir]);
+
+      const setSort = (k) => {
+        if (sortBy === k) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+        else { setSortBy(k); setSortDir('desc'); }
+      };
+
+      const totals = useMemo(() => {
+        const tot = pratiche.reduce((s,p) => s + p.netto, 0);
+        const ore = pratiche.reduce((s,p) => s + (p.ore || 0), 0);
+        const chiuse = pratiche.filter(p => p.isChiusa).length;
+        const conNc = pratiche.filter(p => p.hasNc).length;
+        const durate = pratiche.filter(p => p.durataGiorni != null).map(p => p.durataGiorni);
+        const durMedia = durate.length ? durate.reduce((a,b) => a+b, 0) / durate.length : null;
+        return { tot, ore, chiuse, conNc, durMedia, total: pratiche.length };
+      }, [pratiche]);
+
+      const exportCsv = () => {
+        const headers = ['ID PRATICA','COMPANY','GRUPPO','LINES','TYPOLOGY','FAMILY','SALES','CONSULTANT','FY','NEW_BACK','SERVICE MODE','N DOCS','N FTT','N NC','HAS NC','TOT FTT','TOT NC','NETTO','ORE','EUR/H','DATA AVVIO','DATA CHIUSURA','DURATA GG','AVVIO OUTLIER','CONTRIBUTO','ULTIMA FTT','ULTIMA FTT EURO'];
+        const rows = sorted.map(p => [
+          p.idPratica, p.company, p.gruppo, p.lines, p.typology, p.family,
+          p.sales, p.consultant, p.fy, p.newBack, p.serviceMode,
+          p.nDocs, p.nFtt, p.nNc, p.hasNc ? 'SI' : 'NO',
+          p.totFtt, p.totNc, p.netto, p.ore, p.eurPerOra != null ? p.eurPerOra : '',
+          isoDate(p.dataAvvio), isoDate(p.dataChiusura), p.durataGiorni != null ? p.durataGiorni : '',
+          p.avvioIsOutlier ? 'SI' : 'NO', p.contributo,
+          p.lastFtt ? (p.lastFtt.lines || '') : '', p.lastFtt ? p.lastFtt.invoiced : ''
+        ]);
+        const esc = (v) => {
+          if (v == null) return '';
+          const s = typeof v === 'number' ? String(v).replace('.', ',') : String(v);
+          return /[;"\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
+        };
+        const lines = [headers.join(';')];
+        for (const r of rows) lines.push(r.map(esc).join(';'));
+        const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `pratiche_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      const SI = ({ col }) => sortBy !== col ? null : <span style={{marginLeft: 3, color: '#3b82f6'}}>{sortDir === 'asc' ? '↑' : '↓'}</span>;
+
       return (
-        <div className="tbl-wrap">
-          <table className="tbl">
-            <thead>
-              <tr>
-                <th style={{width: 28}}>#</th>
-                <th>{nameKey === 'key' ? 'Voce' : nameKey}</th>
-                {showCount && <th className="num">Fatt.</th>}
-                <th className="num" style={{width: 260}}>Fatturato</th>
-                {showAvg && <th className="num">Media</th>}
-                {showContribution && <th className="num">Contributo</th>}
-                <th className="num">% Tot</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, i) => (
-                <tr key={r.key + i}>
-                  <td className="rank">{i + 1}</td>
-                  <td className="truncate" title={r.key}>{r.key}</td>
-                  {showCount && <td className="num">{fmtNum(r.count)}</td>}
-                  <td className="num">
-                    <div className="bar-cell">
-                      <div className={`bar ${r.value < 0 ? 'neg' : ''}`} style={{width: (Math.abs(r.value)/max * 100) + '%'}} />
-                      <span><strong>{fmtEur(r.value)}</strong></span>
-                    </div>
-                  </td>
-                  {showAvg && <td className="num">{fmtEur(r.count ? r.value / r.count : 0)}</td>}
-                  {showContribution && <td className="num muted">{r.contribution ? fmtEurShort(r.contribution) : '—'}</td>}
-                  <td className="num muted">{total ? fmtPct(r.value / total) : '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="modal-backdrop" onClick={onClose}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-head">
+              <div>
+                <h3>{title}</h3>
+                <p>{subtitle}</p>
+              </div>
+              <button className="icon-btn" onClick={onClose} aria-label="Chiudi"><Icon name="x" /></button>
+            </div>
+            <div className="modal-body">
+              <div className="kpi-grid" style={{marginBottom: 14}}>
+                <Kpi label="Pratiche" value={fmtNum(totals.total)} />
+                <Kpi label="Netto totale" value={fmtEur(totals.tot)} variant="alt" />
+                <Kpi label="Ore" value={fmtHours(totals.ore)} variant="violet" />
+                <Kpi label="Durata media" value={fmtDays(totals.durMedia)} variant="warn" sub={`su chiuse non-outlier`} />
+                <Kpi label="Chiuse" value={`${totals.chiuse}/${totals.total}`} variant="neutral" />
+                <Kpi label="Con NC" value={fmtNum(totals.conNc)} variant={totals.conNc > 0 ? 'danger' : 'neutral'} />
+              </div>
+
+              <div className="tbl-wrap" style={{maxHeight: 480}}>
+                <table className="tbl">
+                  <thead>
+                    <tr>
+                      <th className="sortable" onClick={() => setSort('idPratica')}>ID Pratica<SI col="idPratica" /></th>
+                      <th className="sortable" onClick={() => setSort('company')}>Cliente<SI col="company" /></th>
+                      <th className="sortable" onClick={() => setSort('typology')}>Typology<SI col="typology" /></th>
+                      <th className="sortable" onClick={() => setSort('sales')}>Sales<SI col="sales" /></th>
+                      <th className="sortable" onClick={() => setSort('consultant')}>Tech<SI col="consultant" /></th>
+                      <th className="sortable" onClick={() => setSort('fy')}>FY<SI col="fy" /></th>
+                      <th className="num sortable" onClick={() => setSort('nDocs')}>Doc<SI col="nDocs" /></th>
+                      <th className="num sortable" onClick={() => setSort('totFtt')}>FTT<SI col="totFtt" /></th>
+                      <th className="num sortable" onClick={() => setSort('totNc')}>NC<SI col="totNc" /></th>
+                      <th className="num sortable" onClick={() => setSort('netto')}>Netto<SI col="netto" /></th>
+                      <th className="num sortable" onClick={() => setSort('ore')}>Ore<SI col="ore" /></th>
+                      <th className="num sortable" onClick={() => setSort('eurPerOra')}>€/h<SI col="eurPerOra" /></th>
+                      <th className="sortable" onClick={() => setSort('dataAvvio')}>Avvio<SI col="dataAvvio" /></th>
+                      <th className="sortable" onClick={() => setSort('dataChiusura')}>Chiusura<SI col="dataChiusura" /></th>
+                      <th className="num sortable" onClick={() => setSort('durataGiorni')}>Durata<SI col="durataGiorni" /></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sorted.length === 0 && <tr><td colSpan="15" className="empty">Nessuna pratica</td></tr>}
+                    {sorted.map((p, i) => (
+                      <tr key={i}>
+                        <td className="mono truncate" title={p.idPratica} style={{maxWidth: 220, fontSize: 11}}>{p.idPratica}</td>
+                        <td className="truncate" title={p.company} style={{maxWidth: 180}}>{p.company}</td>
+                        <td>{p.typology || '—'}</td>
+                        <td>{p.sales || '—'}</td>
+                        <td className="muted">{p.consultant || '—'}</td>
+                        <td><span className="badge">{p.fy}</span></td>
+                        <td className="num">
+                          {p.nDocs}
+                          {p.hasNc && <span className="badge nc" style={{marginLeft: 4}}>NC</span>}
+                        </td>
+                        <td className="num muted">{p.totFtt ? fmtEurShort(p.totFtt) : '—'}</td>
+                        <td className="num neg">{p.totNc ? fmtEurShort(p.totNc) : '—'}</td>
+                        <td className="num"><strong className={p.netto < 0 ? 'neg' : ''}>{fmtEur(p.netto)}</strong></td>
+                        <td className="num">{p.ore > 0 ? fmtDec(p.ore, 1) : '—'}</td>
+                        <td className="num muted">{p.eurPerOra != null ? fmtEur(p.eurPerOra) : '—'}</td>
+                        <td className="muted">
+                          {p.dataAvvio ? formatDate(p.dataAvvio) : '—'}
+                          {p.avvioIsOutlier && <span className="badge outlier" style={{marginLeft: 4}}>outlier</span>}
+                        </td>
+                        <td className="muted">{p.dataChiusura ? formatDate(p.dataChiusura) : <span className="badge open">aperta</span>}</td>
+                        <td className="num">{p.durataGiorni != null ? fmtDays(p.durataGiorni) : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="modal-foot">
+              <span>{fmtNum(pratiche.length)} pratiche · click sulle intestazioni per ordinare</span>
+              <button className="btn btn-primary btn-sm" onClick={exportCsv}>
+                <Icon name="download" size={12} /> Esporta CSV
+              </button>
+            </div>
+          </div>
         </div>
       );
     };
 
-    // ============== Views per tab ==============
+    // ============== Interactive Chart Helper ==============
+    const makeBarClick = (drill) => (e) => {
+      if (e && e.activeLabel != null) drill(e.activeLabel);
+    };
 
-    const OverviewView = ({ data }) => {
-      // Serie mensile
+    // ============== VIEWS ==============
+
+    // --- Overview tab ---
+    const OverviewView = ({ pratiche, docs, onDrill }) => {
+      // Monthly series (based on docs to get month distribution of FTT/NC)
       const monthly = useMemo(() => {
-        const g = groupBy(data.filter(r => r.__mk), r => r.__mk);
-        return g.sort((a,b) => a.key.localeCompare(b.key));
-      }, [data]);
+        const m = new Map();
+        for (const d of docs) {
+          if (!d.__mk) continue;
+          const e = m.get(d.__mk) || { key: d.__mk, label: monthLabel(d.__mk), ftt: 0, nc: 0, net: 0, n: 0 };
+          if (d.tipoDoc === 'NC') e.nc += d.invoiced; else e.ftt += d.invoiced;
+          e.net += d.invoiced;
+          e.n += 1;
+          m.set(d.__mk, e);
+        }
+        return Array.from(m.values()).sort((a,b) => a.key.localeCompare(b.key));
+      }, [docs]);
 
-      // Per FY
+      // Per FY netto
       const perFY = useMemo(() => {
-        return groupBy(data, r => r.FY).sort((a,b) => a.key.localeCompare(b.key));
-      }, [data]);
+        return groupBy(pratiche, p => p.fy).sort((a,b) => a.key.localeCompare(b.key));
+      }, [pratiche]);
 
-      // Cumulative per FY per mese-in-FY (index 0..11)
+      // Cumulative per FY per month-in-FY
       const fyCumul = useMemo(() => {
         const fys = {};
-        const sorted = [...data].filter(r => r.MONTH && r.FY).sort((a,b) => a.MONTH - b.MONTH);
+        const sorted = [...docs].filter(r => r.month && r.fy).sort((a,b) => a.month - b.month);
         for (const r of sorted) {
-          if (!fys[r.FY]) fys[r.FY] = {};
-          const k = r.__mk;
-          fys[r.FY][k] = (fys[r.FY][k] || 0) + r.INVOICED;
+          if (!fys[r.fy]) fys[r.fy] = {};
+          fys[r.fy][r.__mk] = (fys[r.fy][r.__mk] || 0) + r.invoiced;
         }
-        // Build a 12-month axis aligned by month index (1..12) for visual comparison
         const result = {};
         for (const fy of Object.keys(fys)) {
           const months = Object.keys(fys[fy]).sort();
           let cum = 0;
-          result[fy] = months.map(mk => {
-            cum += fys[fy][mk];
-            return { monthKey: mk, month: monthLabel(mk), cum };
-          });
+          result[fy] = months.map(mk => { cum += fys[fy][mk]; return { monthKey: mk, month: monthLabel(mk), cum }; });
         }
         return result;
-      }, [data]);
-
-      // Compose time chart
-      const barData = monthly.map(m => ({ key: m.key, label: monthLabel(m.key), value: m.value, positive: m.positive, negative: m.negative, count: m.count }));
+      }, [docs]);
 
       return (
         <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
           <div className="card">
             <div className="card-head">
               <div>
-                <h3 className="card-title">Andamento fatturato mensile</h3>
-                <div className="card-sub">Serie temporale su {monthly.length} mesi · include positivi e negativi</div>
+                <h3 className="card-title">Andamento mensile · FTT, NC e netto</h3>
+                <div className="card-sub">Serie temporale · click sulle barre per vedere le pratiche del mese</div>
               </div>
+              <span className="drill-hint">clic-attivo</span>
             </div>
-            <ResponsiveContainer width="100%" height={280}>
-              <ComposedChart data={barData} margin={{top: 5, right: 20, left: 0, bottom: 0}}>
-                <defs>
-                  <linearGradient id="gPos" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={.9} />
-                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={.5} />
-                  </linearGradient>
-                </defs>
+            <ResponsiveContainer width="100%" height={320}>
+              <ComposedChart data={monthly} margin={{top: 5, right: 20, left: 0, bottom: 0}}
+                onClick={(e) => { if (e && e.activeLabel) {
+                  const mk = monthly.find(m => m.label === e.activeLabel)?.key;
+                  if (mk) onDrill({
+                    title: `Pratiche con documenti in ${monthLabelLong(mk)}`,
+                    subtitle: `Pratiche con almeno un documento nel mese selezionato`,
+                    pratiche: pratiche.filter(p => p.docs.some(d => d.__mk === mk))
+                  });
+                }}}>
                 <CartesianGrid vertical={false} stroke="#eef2f6" />
                 <XAxis dataKey="label" tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} interval="preserveStartEnd" />
                 <YAxis tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
-                <Tooltip content={<TT />} />
-                <Bar dataKey="value" fill="url(#gPos)" radius={[4,4,0,0]} name="Fatturato" />
-                <Line type="monotone" dataKey="value" stroke="#1e40af" strokeWidth={1.5} dot={false} name="Trend" />
+                <Tooltip content={<TT clickable />} />
+                <Legend wrapperStyle={{fontSize: 11, paddingTop: 6}} iconType="circle" />
+                <Bar dataKey="ftt" name="FTT" fill="#3b82f6" radius={[3,3,0,0]} stackId="a" />
+                <Bar dataKey="nc" name="NC" fill="#ef4444" radius={[0,0,3,3]} stackId="a" />
+                <Line type="monotone" dataKey="net" name="Netto" stroke="#1e40af" strokeWidth={1.6} dot={{r:2}} activeDot={{r:4}} />
+                <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="2 2" />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
@@ -726,17 +1096,23 @@
             <div className="card">
               <div className="card-head">
                 <div>
-                  <h3 className="card-title">Fatturato per FY</h3>
-                  <div className="card-sub">Confronto esercizi</div>
+                  <h3 className="card-title">Netto per FY</h3>
+                  <div className="card-sub">Click su una barra per vedere tutte le pratiche dell'FY</div>
                 </div>
+                <span className="drill-hint">clic-attivo</span>
               </div>
               <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={perFY} margin={{top: 10, right: 10, left: 0, bottom: 0}}>
+                <BarChart data={perFY} margin={{top: 10, right: 10, left: 0, bottom: 0}}
+                  onClick={(e) => { if (e && e.activeLabel) onDrill({
+                    title: `Pratiche ${e.activeLabel}`,
+                    subtitle: `Tutte le pratiche con fatturazione nell'esercizio ${e.activeLabel}`,
+                    pratiche: pratiche.filter(p => p.fy === e.activeLabel)
+                  }); }}>
                   <CartesianGrid vertical={false} stroke="#eef2f6" />
                   <XAxis dataKey="key" tick={{fontSize: 11, fill: '#64748b'}} axisLine={false} tickLine={false} />
                   <YAxis tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
-                  <Tooltip content={<TT />} />
-                  <Bar dataKey="value" radius={[6,6,0,0]} name="Fatturato">
+                  <Tooltip content={<TT clickable />} />
+                  <Bar dataKey="value" radius={[6,6,0,0]} name="Netto">
                     {perFY.map((e,i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
                     <LabelList dataKey="value" position="top" formatter={fmtEurShort} style={{fontSize: 10, fill: '#334155', fontWeight: 600}} />
                   </Bar>
@@ -748,7 +1124,7 @@
               <div className="card-head">
                 <div>
                   <h3 className="card-title">Cumulato per FY</h3>
-                  <div className="card-sub">Crescita progressiva nell'anno</div>
+                  <div className="card-sub">Crescita progressiva per esercizio</div>
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={250}>
@@ -769,25 +1145,27 @@
       );
     };
 
-    const RankingView = ({ data, dim, label, icon, showContribution = false }) => {
-      const agg = useMemo(() => groupBy(data, r => r[dim]).sort((a,b) => b.value - a.value), [data, dim]);
-
-      // Breakdown per FY per ogni dim
-      const fys = useMemo(() => Array.from(new Set(data.map(r => r.FY))).sort(), [data]);
+    // --- Ranking view (generic: Sales / Consultant / Typology / Family / TypeFrance) ---
+    const RankingView = ({ pratiche, dim, label, onDrill }) => {
+      const agg = useMemo(() => groupBy(pratiche, p => p[dim]).sort((a,b) => b.netto - a.netto), [pratiche, dim]);
+      const fys = useMemo(() => Array.from(new Set(pratiche.map(p => p.fy))).sort(), [pratiche]);
       const byFY = useMemo(() => {
         const m = {};
-        for (const r of data) {
-          const k = r[dim];
+        for (const p of pratiche) {
+          const k = p[dim];
           if (!k) continue;
           if (!m[k]) m[k] = { key: k };
-          m[k][r.FY] = (m[k][r.FY] || 0) + r.INVOICED;
+          m[k][p.fy] = (m[k][p.fy] || 0) + p.netto;
         }
         return Object.values(m).sort((a,b) => {
           const sa = fys.reduce((s,f) => s + (a[f]||0), 0);
           const sb = fys.reduce((s,f) => s + (b[f]||0), 0);
           return sb - sa;
         });
-      }, [data, dim, fys]);
+      }, [pratiche, dim, fys]);
+
+      const total = agg.reduce((s,e) => s + e.netto, 0);
+      const max = Math.max(...agg.map(e => Math.abs(e.netto)), 1);
 
       return (
         <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
@@ -795,18 +1173,24 @@
             <div className="card-head">
               <div>
                 <h3 className="card-title">Ranking {label}</h3>
-                <div className="card-sub">{agg.length} voci · ordinate per fatturato</div>
+                <div className="card-sub">{agg.length} voci · click per drill-down</div>
               </div>
+              <span className="drill-hint">clic-attivo</span>
             </div>
             <ResponsiveContainer width="100%" height={Math.max(220, agg.length * 34)}>
-              <BarChart data={agg} layout="vertical" margin={{top: 5, right: 60, left: 10, bottom: 0}}>
+              <BarChart data={agg} layout="vertical" margin={{top: 5, right: 70, left: 10, bottom: 0}}
+                onClick={(e) => { if (e && e.activeLabel) onDrill({
+                  title: `${label}: ${e.activeLabel}`,
+                  subtitle: `Pratiche attribuite a ${e.activeLabel}`,
+                  pratiche: pratiche.filter(p => p[dim] === e.activeLabel)
+                }); }}>
                 <CartesianGrid horizontal={false} stroke="#eef2f6" />
                 <XAxis type="number" tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="key" tick={{fontSize: 11, fill: '#1e293b'}} axisLine={false} tickLine={false} width={120} />
-                <Tooltip content={<TT />} />
-                <Bar dataKey="value" radius={[0,4,4,0]} name="Fatturato">
-                  {agg.map((e,i) => <Cell key={i} fill={e.value < 0 ? '#ef4444' : PALETTE[i % PALETTE.length]} />)}
-                  <LabelList dataKey="value" position="right" formatter={fmtEurShort} style={{fontSize: 10, fill: '#334155', fontWeight: 600}} />
+                <YAxis type="category" dataKey="key" tick={{fontSize: 11, fill: '#1e293b'}} axisLine={false} tickLine={false} width={130} />
+                <Tooltip content={<TT clickable />} />
+                <Bar dataKey="netto" radius={[0,4,4,0]} name="Netto">
+                  {agg.map((e,i) => <Cell key={i} fill={e.netto < 0 ? '#ef4444' : PALETTE[i % PALETTE.length]} />)}
+                  <LabelList dataKey="netto" position="right" formatter={fmtEurShort} style={{fontSize: 10, fill: '#334155', fontWeight: 600}} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -815,19 +1199,60 @@
           <div className="grid-2">
             <div className="card">
               <div className="card-head">
-                <h3 className="card-title">Dettaglio {label}</h3>
+                <div>
+                  <h3 className="card-title">Dettaglio metriche {label}</h3>
+                  <div className="card-sub">Click su una riga per drill-down</div>
+                </div>
               </div>
-              <RankingTable data={agg} showContribution={showContribution} showAvg={true} />
+              <div className="tbl-wrap" style={{maxHeight: 480}}>
+                <table className="tbl">
+                  <thead>
+                    <tr>
+                      <th style={{width: 28}}>#</th>
+                      <th>{label}</th>
+                      <th className="num">Pratiche</th>
+                      <th className="num">Netto</th>
+                      <th className="num">Ore</th>
+                      <th className="num">€/h</th>
+                      <th className="num">Durata med</th>
+                      <th className="num">% Tot</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {agg.map((e,i) => (
+                      <tr key={i} className="clickable" onClick={() => onDrill({
+                        title: `${label}: ${e.key}`,
+                        subtitle: `Pratiche attribuite a ${e.key}`,
+                        pratiche: pratiche.filter(p => p[dim] === e.key)
+                      })}>
+                        <td className="rank">{i+1}</td>
+                        <td className="truncate" title={e.key}>{e.key}</td>
+                        <td className="num">{fmtNum(e.count)}</td>
+                        <td className="num">
+                          <div className="bar-cell">
+                            <div className={`bar ${e.netto < 0 ? 'neg-bar' : ''}`} style={{width: (Math.abs(e.netto)/max * 100) + '%'}} />
+                            <span><strong>{fmtEur(e.netto)}</strong></span>
+                          </div>
+                        </td>
+                        <td className="num">{e.ore > 0 ? fmtDec(e.ore, 0) : '—'}</td>
+                        <td className="num muted">{e.eurPerOra != null ? fmtEur(e.eurPerOra) : '—'}</td>
+                        <td className="num muted">{e.durataMedia != null ? fmtDays(e.durataMedia) : '—'}</td>
+                        <td className="num muted">{total ? fmtPct(e.netto / total) : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <div className="card">
               <div className="card-head">
                 <div>
                   <h3 className="card-title">Breakdown per FY</h3>
-                  <div className="card-sub">Fatturato per esercizio per ogni voce</div>
+                  <div className="card-sub">Click su riga per vedere le pratiche</div>
                 </div>
               </div>
-              <div className="tbl-wrap">
+              <div className="tbl-wrap" style={{maxHeight: 480}}>
                 <table className="tbl">
                   <thead>
                     <tr>
@@ -840,7 +1265,11 @@
                     {byFY.map((r,i) => {
                       const tot = fys.reduce((s,f) => s + (r[f]||0), 0);
                       return (
-                        <tr key={i}>
+                        <tr key={i} className="clickable" onClick={() => onDrill({
+                          title: `${label}: ${r.key}`,
+                          subtitle: `Pratiche attribuite a ${r.key} (tutti gli FY)`,
+                          pratiche: pratiche.filter(p => p[dim] === r.key)
+                        })}>
                           <td className="truncate" title={r.key}>{r.key}</td>
                           {fys.map(f => <td key={f} className="num muted">{r[f] ? fmtEurShort(r[f]) : '—'}</td>)}
                           <td className="num"><strong>{fmtEurShort(tot)}</strong></td>
@@ -856,56 +1285,139 @@
       );
     };
 
-    const ProductsView = ({ data }) => {
-      const byTypology = useMemo(() => groupBy(data, r => r.TYPOLOGY).sort((a,b) => b.value - a.value), [data]);
-      const byFamily = useMemo(() => groupBy(data, r => r.FAMILY && r.FAMILY !== 0 ? String(r.FAMILY) : 'n.d.').sort((a,b) => b.value - a.value), [data]);
-      const byTypeFrance = useMemo(() => groupBy(data, r => r['Type France']).sort((a,b) => b.value - a.value), [data]);
-      const byLinesPreciso = useMemo(() => groupBy(data, r => r['LINES PRECISO']).sort((a,b) => b.value - a.value).slice(0, 20), [data]);
+    // --- Tempi di lavorazione ---
+    const TempiView = ({ pratiche, onDrill }) => {
+      const withDuration = useMemo(() => pratiche.filter(p => p.durataGiorni != null), [pratiche]);
+      const outliers = useMemo(() => pratiche.filter(p => p.avvioIsOutlier).length, [pratiche]);
+      const aperte = useMemo(() => pratiche.filter(p => !p.isChiusa).length, [pratiche]);
+
+      const overallMean = withDuration.length ? withDuration.reduce((s,p) => s + p.durataGiorni, 0) / withDuration.length : null;
+      const sortedDur = withDuration.map(p => p.durataGiorni).sort((a,b) => a-b);
+      const overallMedian = sortedDur.length ? (sortedDur.length % 2 ? sortedDur[(sortedDur.length-1)/2] : (sortedDur[sortedDur.length/2-1] + sortedDur[sortedDur.length/2])/2) : null;
+      const p90 = sortedDur.length ? sortedDur[Math.min(sortedDur.length-1, Math.floor(sortedDur.length * 0.9))] : null;
+
+      // Histogram
+      const hist = useMemo(() => {
+        if (!withDuration.length) return { bins: [], maxCount: 0 };
+        const max = Math.max(...withDuration.map(p => p.durataGiorni));
+        const binSize = max > 500 ? 60 : max > 200 ? 30 : 15;
+        const nBins = Math.min(25, Math.ceil(max / binSize) + 1);
+        const bins = Array.from({length: nBins}, (_, i) => ({
+          from: i * binSize,
+          to: (i+1) * binSize - 1,
+          label: `${i*binSize}–${(i+1)*binSize}`,
+          count: 0,
+          pratiche: []
+        }));
+        for (const p of withDuration) {
+          const idx = Math.min(nBins - 1, Math.floor(p.durataGiorni / binSize));
+          bins[idx].count += 1;
+          bins[idx].pratiche.push(p);
+        }
+        return { bins, maxCount: Math.max(...bins.map(b => b.count), 1) };
+      }, [withDuration]);
+
+      // Per typology
+      const byTypology = useMemo(() => groupBy(withDuration, p => p.typology).sort((a,b) => (b.durataMedia || 0) - (a.durataMedia || 0)), [withDuration]);
+
+      // Per consultant
+      const byConsultant = useMemo(() => groupBy(withDuration, p => p.consultant).sort((a,b) => (b.durataMedia || 0) - (a.durataMedia || 0)), [withDuration]);
+
+      // Scatter: durata vs netto (top points)
+      const scatterData = useMemo(() => {
+        return withDuration.map(p => ({
+          x: p.durataGiorni, y: p.netto, id: p.idPratica, company: p.company, typology: p.typology, ore: p.ore
+        }));
+      }, [withDuration]);
 
       return (
         <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
+          <div className="kpi-grid">
+            <Kpi label="Pratiche chiuse non-outlier" value={fmtNum(withDuration.length)} sub={`/ ${fmtNum(pratiche.length)} totali`} variant="alt" />
+            <Kpi label="Durata media" value={fmtDays(overallMean)} variant="warn" />
+            <Kpi label="Durata mediana" value={fmtDays(overallMedian)} variant="neutral" />
+            <Kpi label="90° percentile" value={fmtDays(p90)} variant="violet" />
+            <Kpi label="Outlier (avvio 01/01/2000)" value={fmtNum(outliers)} variant={outliers > 0 ? 'danger' : 'neutral'} sub="esclusi da analisi" />
+            <Kpi label="Pratiche aperte" value={fmtNum(aperte)} variant="warn" sub="senza data chiusura" />
+          </div>
+
+          <div className="card">
+            <div className="card-head">
+              <div>
+                <h3 className="card-title">Distribuzione tempi di lavorazione</h3>
+                <div className="card-sub">Giorni da DATA AVVIO a DATA CHIUSURA · outlier esclusi · click sulle barre</div>
+              </div>
+              <span className="drill-hint">clic-attivo</span>
+            </div>
+            <div className="hist">
+              {hist.bins.map((b, i) => (
+                <div key={i}
+                     className="hist-bar"
+                     style={{
+                       height: (b.count / hist.maxCount * 100) + '%',
+                       background: i === 0 ? 'linear-gradient(180deg, #10b981, #059669)' : i < 3 ? 'linear-gradient(180deg, #3b82f6, #1e40af)' : i < 8 ? 'linear-gradient(180deg, #f59e0b, #c27803)' : 'linear-gradient(180deg, #ef4444, #c5291f)'
+                     }}
+                     title={`${b.label} gg · ${b.count} pratiche`}
+                     onClick={() => b.pratiche.length && onDrill({
+                       title: `Pratiche con durata ${b.label} giorni`,
+                       subtitle: `${b.count} pratiche nella fascia ${b.label} gg`,
+                       pratiche: b.pratiche
+                     })} />
+              ))}
+            </div>
+            <div className="hist-axis">
+              {hist.bins.map((b,i) => <span key={i}>{b.from}</span>)}
+            </div>
+          </div>
+
           <div className="grid-2">
             <div className="card">
               <div className="card-head">
                 <div>
-                  <h3 className="card-title">Typology</h3>
-                  <div className="card-sub">{byTypology.length} tipologie</div>
+                  <h3 className="card-title">Tempo medio per Typology</h3>
+                  <div className="card-sub">Ordinato per durata decrescente</div>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
-                  <Pie data={byTypology} dataKey="value" nameKey="key" cx="50%" cy="50%" innerRadius={55} outerRadius={95} paddingAngle={2}>
+              <ResponsiveContainer width="100%" height={Math.max(220, byTypology.length * 32)}>
+                <BarChart data={byTypology} layout="vertical" margin={{top: 5, right: 70, left: 10, bottom: 0}}
+                  onClick={(e) => { if (e && e.activeLabel) onDrill({
+                    title: `Typology: ${e.activeLabel} · tempi`,
+                    subtitle: `Pratiche chiuse non-outlier`,
+                    pratiche: withDuration.filter(p => p.typology === e.activeLabel)
+                  }); }}>
+                  <CartesianGrid horizontal={false} stroke="#eef2f6" />
+                  <XAxis type="number" tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={v => v + 'gg'} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="key" tick={{fontSize: 11, fill: '#1e293b'}} axisLine={false} tickLine={false} width={110} />
+                  <Tooltip content={<TT valueFmt={v => fmtDec(v, 0) + ' gg'} clickable />} />
+                  <Bar dataKey="durataMedia" radius={[0,4,4,0]} name="Durata media">
                     {byTypology.map((e,i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
-                  </Pie>
-                  <Tooltip content={<TT />} />
-                </PieChart>
+                    <LabelList dataKey="durataMedia" position="right" formatter={v => fmtDec(v, 0) + 'gg'} style={{fontSize: 10, fill: '#334155', fontWeight: 600}} />
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
-              <div className="chart-legend">
-                {byTypology.map((e,i) => (
-                  <span className="chart-legend-item" key={i}>
-                    <span className="chart-legend-dot" style={{background: PALETTE[i % PALETTE.length]}} />
-                    {e.key} · {fmtEurShort(e.value)}
-                  </span>
-                ))}
-              </div>
             </div>
 
             <div className="card">
               <div className="card-head">
                 <div>
-                  <h3 className="card-title">Family</h3>
-                  <div className="card-sub">Macro-categorie R&D / PB / Others</div>
+                  <h3 className="card-title">Tempo medio per Consulente</h3>
+                  <div className="card-sub">Solo pratiche con durata calcolata</div>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={byFamily} layout="vertical" margin={{top: 5, right: 60, left: 0, bottom: 0}}>
+              <ResponsiveContainer width="100%" height={Math.max(220, byConsultant.length * 32)}>
+                <BarChart data={byConsultant} layout="vertical" margin={{top: 5, right: 70, left: 10, bottom: 0}}
+                  onClick={(e) => { if (e && e.activeLabel) onDrill({
+                    title: `Consulente: ${e.activeLabel} · tempi`,
+                    subtitle: `Pratiche chiuse non-outlier`,
+                    pratiche: withDuration.filter(p => p.consultant === e.activeLabel)
+                  }); }}>
                   <CartesianGrid horizontal={false} stroke="#eef2f6" />
-                  <XAxis type="number" tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="key" tick={{fontSize: 11, fill: '#1e293b'}} axisLine={false} tickLine={false} width={90} />
-                  <Tooltip content={<TT />} />
-                  <Bar dataKey="value" radius={[0,4,4,0]} name="Fatturato">
-                    {byFamily.map((e,i) => <Cell key={i} fill={PALETTE[(i+2) % PALETTE.length]} />)}
-                    <LabelList dataKey="value" position="right" formatter={fmtEurShort} style={{fontSize: 10, fill: '#334155', fontWeight: 600}} />
+                  <XAxis type="number" tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={v => v + 'gg'} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="key" tick={{fontSize: 11, fill: '#1e293b'}} axisLine={false} tickLine={false} width={80} />
+                  <Tooltip content={<TT valueFmt={v => fmtDec(v, 0) + ' gg'} clickable />} />
+                  <Bar dataKey="durataMedia" radius={[0,4,4,0]} name="Durata media">
+                    {byConsultant.map((e,i) => <Cell key={i} fill={PALETTE[(i+3) % PALETTE.length]} />)}
+                    <LabelList dataKey="durataMedia" position="right" formatter={v => fmtDec(v, 0) + 'gg'} style={{fontSize: 10, fill: '#334155', fontWeight: 600}} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -915,43 +1427,329 @@
           <div className="card">
             <div className="card-head">
               <div>
-                <h3 className="card-title">Type France</h3>
-                <div className="card-sub">Classificazione categoria France</div>
+                <h3 className="card-title">Scatter · durata vs netto</h3>
+                <div className="card-sub">Ogni punto è una pratica chiusa · asse X = durata (gg), asse Y = netto (€)</div>
               </div>
             </div>
-            <div className="grid-2">
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={byTypeFrance} margin={{top: 5, right: 20, left: 0, bottom: 0}}>
-                  <CartesianGrid vertical={false} stroke="#eef2f6" />
-                  <XAxis dataKey="key" tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} interval={0} angle={-15} textAnchor="end" height={50} />
-                  <YAxis tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
-                  <Tooltip content={<TT />} />
-                  <Bar dataKey="value" radius={[4,4,0,0]}>
-                    {byTypeFrance.map((e,i) => <Cell key={i} fill={PALETTE[(i+4) % PALETTE.length]} />)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-              <RankingTable data={byTypeFrance} />
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="card-head">
-              <div>
-                <h3 className="card-title">Top 20 Lines Preciso</h3>
-                <div className="card-sub">Linee di prodotto di maggior fatturato</div>
-              </div>
-            </div>
-            <RankingTable data={byLinesPreciso} showContribution={true} showAvg={true} />
+            <ResponsiveContainer width="100%" height={380}>
+              <ScatterChart margin={{top: 10, right: 20, left: 0, bottom: 10}}>
+                <CartesianGrid stroke="#eef2f6" />
+                <XAxis type="number" dataKey="x" name="Durata" tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={v => v + 'gg'} axisLine={false} tickLine={false} label={{value: 'Durata (giorni)', position: 'insideBottom', offset: -2, fill: '#64748b', fontSize: 10}} />
+                <YAxis type="number" dataKey="y" name="Netto" tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
+                <Tooltip cursor={{ strokeDasharray: '3 3' }} content={({active, payload}) => {
+                  if (!active || !payload || !payload.length) return null;
+                  const d = payload[0].payload;
+                  return (
+                    <div className="custom-tt" style={{minWidth: 200}}>
+                      <div className="tt-title">{d.company}</div>
+                      <div className="tt-row"><span className="k">ID</span><span className="v mono" style={{fontSize: 10}}>{d.id}</span></div>
+                      <div className="tt-row"><span className="k">Typology</span><span className="v">{d.typology}</span></div>
+                      <div className="tt-row"><span className="k">Durata</span><span className="v">{fmtDec(d.x, 0)} gg</span></div>
+                      <div className="tt-row"><span className="k">Netto</span><span className="v">{fmtEur(d.y)}</span></div>
+                      <div className="tt-row"><span className="k">Ore</span><span className="v">{fmtDec(d.ore, 1)}</span></div>
+                    </div>
+                  );
+                }} />
+                <Scatter data={scatterData} fill="#3b82f6" fillOpacity={0.5} />
+                <ReferenceLine x={overallMean} stroke="#f59e0b" strokeDasharray="4 2" label={{value: `media ${fmtDec(overallMean,0)}gg`, position: 'top', fill: '#c27803', fontSize: 10}} />
+              </ScatterChart>
+            </ResponsiveContainer>
           </div>
         </div>
       );
     };
 
-    const ClientsView = ({ data }) => {
-      const byCompany = useMemo(() => groupBy(data, r => r.COMPANY).sort((a,b) => b.value - a.value), [data]);
-      const byGruppo = useMemo(() => groupBy(data.filter(r => r.GRUPPO), r => r.GRUPPO).sort((a,b) => b.value - a.value), [data]);
+    // --- Ore & Produttività ---
+    const OreView = ({ pratiche, onDrill }) => {
+      const withOre = useMemo(() => pratiche.filter(p => p.ore > 0), [pratiche]);
+      const totOre = withOre.reduce((s,p) => s + p.ore, 0);
+      const totNetto = withOre.reduce((s,p) => s + p.netto, 0);
+      const eurOra = totOre > 0 ? totNetto / totOre : 0;
+
+      const byConsultant = useMemo(() => groupBy(withOre, p => p.consultant).sort((a,b) => b.ore - a.ore), [withOre]);
+      const byTypology = useMemo(() => groupBy(withOre, p => p.typology).sort((a,b) => b.ore - a.ore), [withOre]);
+
+      // Top 15 pratiche per ore
+      const topOre = useMemo(() => [...withOre].sort((a,b) => b.ore - a.ore).slice(0, 15), [withOre]);
+
+      return (
+        <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
+          <div className="kpi-grid">
+            <Kpi label="Ore totali" value={fmtDec(totOre, 0)} variant="violet" sub={`${withOre.length} pratiche con ore > 0`} />
+            <Kpi label="Netto pratiche con ore" value={fmtEur(totNetto)} variant="alt" />
+            <Kpi label="€/ora medio" value={fmtEur(eurOra)} variant="" sub="ricavo per ora lavorata" />
+            <Kpi label="Ore medie per pratica" value={fmtHours(withOre.length ? totOre / withOre.length : 0)} variant="neutral" />
+          </div>
+
+          <div className="grid-2">
+            <div className="card">
+              <div className="card-head">
+                <div>
+                  <h3 className="card-title">Ore per Consulente</h3>
+                  <div className="card-sub">Click per drill-down</div>
+                </div>
+                <span className="drill-hint">clic-attivo</span>
+              </div>
+              <ResponsiveContainer width="100%" height={Math.max(220, byConsultant.length * 36)}>
+                <BarChart data={byConsultant} layout="vertical" margin={{top: 5, right: 70, left: 10, bottom: 0}}
+                  onClick={(e) => { if (e && e.activeLabel) onDrill({
+                    title: `Consulente: ${e.activeLabel} · ore`,
+                    subtitle: `Pratiche con ore lavorate > 0`,
+                    pratiche: withOre.filter(p => p.consultant === e.activeLabel)
+                  }); }}>
+                  <CartesianGrid horizontal={false} stroke="#eef2f6" />
+                  <XAxis type="number" tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="key" tick={{fontSize: 11, fill: '#1e293b'}} axisLine={false} tickLine={false} width={80} />
+                  <Tooltip content={<TT valueFmt={v => fmtDec(v, 0) + ' h'} clickable />} />
+                  <Bar dataKey="ore" radius={[0,4,4,0]} name="Ore">
+                    {byConsultant.map((e,i) => <Cell key={i} fill={PALETTE[(i+2) % PALETTE.length]} />)}
+                    <LabelList dataKey="ore" position="right" formatter={v => fmtDec(v, 0) + 'h'} style={{fontSize: 10, fill: '#334155', fontWeight: 600}} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="card">
+              <div className="card-head">
+                <div>
+                  <h3 className="card-title">Produttività €/h per Consulente</h3>
+                  <div className="card-sub">Netto / ore per consulente</div>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={Math.max(220, byConsultant.length * 36)}>
+                <BarChart data={[...byConsultant].sort((a,b) => (b.eurPerOra||0) - (a.eurPerOra||0))} layout="vertical" margin={{top: 5, right: 90, left: 10, bottom: 0}}>
+                  <CartesianGrid horizontal={false} stroke="#eef2f6" />
+                  <XAxis type="number" tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="key" tick={{fontSize: 11, fill: '#1e293b'}} axisLine={false} tickLine={false} width={80} />
+                  <Tooltip content={<TT valueFmt={fmtEur} />} />
+                  <Bar dataKey="eurPerOra" radius={[0,4,4,0]} name="€/h">
+                    {byConsultant.map((e,i) => <Cell key={i} fill={e.eurPerOra < 0 ? '#ef4444' : PALETTE[(i+5) % PALETTE.length]} />)}
+                    <LabelList dataKey="eurPerOra" position="right" formatter={fmtEurShort} style={{fontSize: 10, fill: '#334155', fontWeight: 600}} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-head">
+              <div>
+                <h3 className="card-title">Ore e produttività per Typology</h3>
+                <div className="card-sub">Click su una riga per drill-down</div>
+              </div>
+            </div>
+            <div className="tbl-wrap">
+              <table className="tbl">
+                <thead>
+                  <tr>
+                    <th>Typology</th>
+                    <th className="num">Pratiche</th>
+                    <th className="num">Ore totali</th>
+                    <th className="num">Ore med.</th>
+                    <th className="num">Netto</th>
+                    <th className="num">€/h</th>
+                    <th className="num">Durata med.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {byTypology.map((e,i) => (
+                    <tr key={i} className="clickable" onClick={() => onDrill({
+                      title: `Typology: ${e.key} · ore`,
+                      subtitle: `Pratiche con ore > 0`,
+                      pratiche: withOre.filter(p => p.typology === e.key)
+                    })}>
+                      <td>{e.key}</td>
+                      <td className="num">{fmtNum(e.count)}</td>
+                      <td className="num"><strong>{fmtDec(e.ore, 0)} h</strong></td>
+                      <td className="num muted">{fmtDec(e.avgOre, 1)} h</td>
+                      <td className="num">{fmtEur(e.netto)}</td>
+                      <td className="num"><strong>{e.eurPerOra != null ? fmtEur(e.eurPerOra) : '—'}</strong></td>
+                      <td className="num muted">{e.durataMedia != null ? fmtDays(e.durataMedia) : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-head">
+              <div>
+                <h3 className="card-title">Top 15 pratiche per ore</h3>
+                <div className="card-sub">Le pratiche con maggior investimento di ore</div>
+              </div>
+            </div>
+            <div className="tbl-wrap">
+              <table className="tbl">
+                <thead>
+                  <tr>
+                    <th style={{width: 28}}>#</th>
+                    <th>ID Pratica</th>
+                    <th>Cliente</th>
+                    <th>Typology</th>
+                    <th>Tech</th>
+                    <th className="num">Ore</th>
+                    <th className="num">Netto</th>
+                    <th className="num">€/h</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topOre.map((p,i) => (
+                    <tr key={i} className="clickable" onClick={() => onDrill({
+                      title: `Pratica: ${p.idPratica}`,
+                      subtitle: `Dettaglio singola pratica`,
+                      pratiche: [p]
+                    })}>
+                      <td className="rank">{i+1}</td>
+                      <td className="mono truncate" title={p.idPratica} style={{maxWidth: 260, fontSize: 11}}>{p.idPratica}</td>
+                      <td className="truncate" title={p.company} style={{maxWidth: 180}}>{p.company}</td>
+                      <td>{p.typology}</td>
+                      <td className="muted">{p.consultant || '—'}</td>
+                      <td className="num"><strong>{fmtDec(p.ore, 1)} h</strong></td>
+                      <td className="num"><strong>{fmtEur(p.netto)}</strong></td>
+                      <td className="num muted">{p.eurPerOra != null ? fmtEur(p.eurPerOra) : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // --- Documenti (FTT vs NC) ---
+    const DocumentiView = ({ pratiche, docs, onDrill }) => {
+      const fttCount = docs.filter(d => d.tipoDoc === 'FTT').length;
+      const ncCount = docs.filter(d => d.tipoDoc === 'NC').length;
+      const fttTot = docs.filter(d => d.tipoDoc === 'FTT').reduce((s,d) => s + d.invoiced, 0);
+      const ncTot = docs.filter(d => d.tipoDoc === 'NC').reduce((s,d) => s + d.invoiced, 0);
+      const conNc = pratiche.filter(p => p.hasNc);
+
+      // Netto per mese (waterfall)
+      const monthly = useMemo(() => {
+        const m = new Map();
+        for (const d of docs) {
+          if (!d.__mk) continue;
+          const e = m.get(d.__mk) || { key: d.__mk, label: monthLabel(d.__mk), ftt: 0, nc: 0, net: 0 };
+          if (d.tipoDoc === 'NC') e.nc += d.invoiced; else e.ftt += d.invoiced;
+          e.net += d.invoiced;
+          m.set(d.__mk, e);
+        }
+        return Array.from(m.values()).sort((a,b) => a.key.localeCompare(b.key));
+      }, [docs]);
+
+      // Pratiche con impatto NC rilevante
+      const impattoNc = useMemo(() => {
+        return [...conNc].sort((a,b) => Math.abs(b.totNc) - Math.abs(a.totNc));
+      }, [conNc]);
+
+      return (
+        <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
+          <div className="kpi-grid">
+            <Kpi label="Documenti totali" value={fmtNum(docs.length)} />
+            <Kpi label="FTT · fatture" value={fmtNum(fttCount)} sub={fmtEur(fttTot)} variant="alt" subVariant="pos" />
+            <Kpi label="NC · note di credito" value={fmtNum(ncCount)} sub={fmtEur(ncTot)} variant="danger" subVariant="neg" />
+            <Kpi label="Netto documenti" value={fmtEur(fttTot + ncTot)} variant="" />
+            <Kpi label="Pratiche con NC" value={fmtNum(conNc.length)} sub={`${fmtPct(conNc.length / Math.max(1, pratiche.length))} del totale`} variant="warn" />
+            <Kpi label="Impatto NC su netto" value={fmtPct(Math.abs(ncTot) / Math.max(1, fttTot))} sub="NC / FTT" variant="neutral" />
+          </div>
+
+          <div className="card">
+            <div className="card-head">
+              <div>
+                <h3 className="card-title">Distribuzione documenti per periodo</h3>
+                <div className="card-sub">FTT (positive) vs NC (negative) · linea = netto mensile · click per drill</div>
+              </div>
+              <span className="drill-hint">clic-attivo</span>
+            </div>
+            <ResponsiveContainer width="100%" height={320}>
+              <ComposedChart data={monthly} margin={{top: 5, right: 20, left: 0, bottom: 0}}
+                onClick={(e) => { if (e && e.activeLabel) {
+                  const mk = monthly.find(m => m.label === e.activeLabel)?.key;
+                  if (mk) onDrill({
+                    title: `Documenti di ${monthLabelLong(mk)}`,
+                    subtitle: `Pratiche con documenti emessi nel mese`,
+                    pratiche: pratiche.filter(p => p.docs.some(d => d.__mk === mk))
+                  });
+                }}}>
+                <CartesianGrid vertical={false} stroke="#eef2f6" />
+                <XAxis dataKey="label" tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                <YAxis tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
+                <Tooltip content={<TT clickable />} />
+                <Legend wrapperStyle={{fontSize: 11, paddingTop: 6}} iconType="circle" />
+                <Bar dataKey="ftt" name="FTT" fill="#3b82f6" radius={[3,3,0,0]} stackId="a" />
+                <Bar dataKey="nc" name="NC" fill="#ef4444" radius={[0,0,3,3]} stackId="a" />
+                <Line type="monotone" dataKey="net" name="Netto" stroke="#1e40af" strokeWidth={1.5} dot={{r:2}} />
+                <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="2 2" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="card">
+            <div className="card-head">
+              <div>
+                <h3 className="card-title">Pratiche con rettifiche (NC)</h3>
+                <div className="card-sub">Le {impattoNc.length} pratiche con almeno una nota di credito · ordinate per impatto</div>
+              </div>
+            </div>
+            {impattoNc.length === 0 ? (
+              <div className="empty">Nessuna pratica con note di credito nel perimetro filtrato</div>
+            ) : (
+              <div className="tbl-wrap" style={{maxHeight: 500}}>
+                <table className="tbl">
+                  <thead>
+                    <tr>
+                      <th>ID Pratica</th>
+                      <th>Cliente</th>
+                      <th>Typology</th>
+                      <th className="num">Doc</th>
+                      <th className="num">Tot FTT</th>
+                      <th className="num">Tot NC</th>
+                      <th className="num">Netto</th>
+                      <th className="num">Impatto</th>
+                      <th>Ultima FTT</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {impattoNc.map((p,i) => {
+                      const impatto = p.totFtt > 0 ? Math.abs(p.totNc) / p.totFtt : 0;
+                      return (
+                        <tr key={i} className="clickable" onClick={() => onDrill({
+                          title: `Pratica: ${p.idPratica}`,
+                          subtitle: `Dettaglio singola pratica con NC`,
+                          pratiche: [p]
+                        })}>
+                          <td className="mono truncate" title={p.idPratica} style={{maxWidth: 240, fontSize: 11}}>{p.idPratica}</td>
+                          <td className="truncate" title={p.company} style={{maxWidth: 180}}>{p.company}</td>
+                          <td>{p.typology}</td>
+                          <td className="num">
+                            <span className="badge ftt">{p.nFtt}</span> <span className="badge nc">{p.nNc}</span>
+                          </td>
+                          <td className="num">{fmtEur(p.totFtt)}</td>
+                          <td className="num neg">{fmtEur(p.totNc)}</td>
+                          <td className="num"><strong className={p.netto < 0 ? 'neg' : ''}>{fmtEur(p.netto)}</strong></td>
+                          <td className="num muted">{fmtPct(impatto)}</td>
+                          <td className="muted">{p.lastFttDate ? formatDate(p.lastFttDate) : '—'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    // --- Clienti ---
+    const ClientiView = ({ pratiche, onDrill }) => {
+      const byCompany = useMemo(() => groupBy(pratiche, p => p.company).sort((a,b) => b.netto - a.netto), [pratiche]);
+      const byGruppo = useMemo(() => groupBy(pratiche.filter(p => p.gruppo), p => p.gruppo).sort((a,b) => b.netto - a.netto), [pratiche]);
       const top20 = byCompany.slice(0, 20);
+
+      const max = Math.max(...byCompany.map(e => Math.abs(e.netto)), 1);
 
       return (
         <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
@@ -959,17 +1757,23 @@
             <div className="card-head">
               <div>
                 <h3 className="card-title">Top 20 clienti</h3>
-                <div className="card-sub">{byCompany.length} clienti nel perimetro filtrato</div>
+                <div className="card-sub">{byCompany.length} clienti nel perimetro · click per drill-down</div>
               </div>
+              <span className="drill-hint">clic-attivo</span>
             </div>
-            <ResponsiveContainer width="100%" height={520}>
-              <BarChart data={top20} layout="vertical" margin={{top: 5, right: 60, left: 10, bottom: 0}}>
+            <ResponsiveContainer width="100%" height={580}>
+              <BarChart data={top20} layout="vertical" margin={{top: 5, right: 80, left: 10, bottom: 0}}
+                onClick={(e) => { if (e && e.activeLabel) onDrill({
+                  title: `Cliente: ${e.activeLabel}`,
+                  subtitle: `Pratiche del cliente`,
+                  pratiche: pratiche.filter(p => p.company === e.activeLabel)
+                }); }}>
                 <CartesianGrid horizontal={false} stroke="#eef2f6" />
                 <XAxis type="number" tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
                 <YAxis type="category" dataKey="key" tick={{fontSize: 10, fill: '#1e293b'}} axisLine={false} tickLine={false} width={200} />
-                <Tooltip content={<TT />} />
-                <Bar dataKey="value" radius={[0,4,4,0]} fill="#1e40af">
-                  <LabelList dataKey="value" position="right" formatter={fmtEurShort} style={{fontSize: 10, fill: '#334155', fontWeight: 600}} />
+                <Tooltip content={<TT clickable />} />
+                <Bar dataKey="netto" radius={[0,4,4,0]} fill="#1e40af" name="Netto">
+                  <LabelList dataKey="netto" position="right" formatter={fmtEurShort} style={{fontSize: 10, fill: '#334155', fontWeight: 600}} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -980,156 +1784,122 @@
               <div className="card-head">
                 <h3 className="card-title">Ranking completo clienti</h3>
               </div>
-              <RankingTable data={byCompany} showContribution={true} showAvg={true} />
+              <div className="tbl-wrap" style={{maxHeight: 520}}>
+                <table className="tbl">
+                  <thead>
+                    <tr>
+                      <th style={{width: 28}}>#</th>
+                      <th>Cliente</th>
+                      <th className="num">Prat.</th>
+                      <th className="num">Netto</th>
+                      <th className="num">Ore</th>
+                      <th className="num">Contributo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {byCompany.map((e,i) => (
+                      <tr key={i} className="clickable" onClick={() => onDrill({
+                        title: `Cliente: ${e.key}`,
+                        subtitle: `Pratiche del cliente`,
+                        pratiche: pratiche.filter(p => p.company === e.key)
+                      })}>
+                        <td className="rank">{i+1}</td>
+                        <td className="truncate" title={e.key}>{e.key}</td>
+                        <td className="num">{fmtNum(e.count)}</td>
+                        <td className="num">
+                          <div className="bar-cell">
+                            <div className={`bar ${e.netto < 0 ? 'neg-bar' : ''}`} style={{width: (Math.abs(e.netto)/max * 100) + '%'}} />
+                            <span><strong>{fmtEur(e.netto)}</strong></span>
+                          </div>
+                        </td>
+                        <td className="num muted">{e.ore > 0 ? fmtDec(e.ore, 0) + 'h' : '—'}</td>
+                        <td className="num muted">{e.contributo ? fmtEurShort(e.contributo) : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <div className="card">
               <div className="card-head">
                 <div>
                   <h3 className="card-title">Ranking gruppi</h3>
-                  <div className="card-sub">{byGruppo.length} gruppi mappati</div>
+                  <div className="card-sub">{byGruppo.length} gruppi mappati · click per drill</div>
                 </div>
               </div>
-              <RankingTable data={byGruppo} showContribution={true} />
+              <div className="tbl-wrap" style={{maxHeight: 520}}>
+                <table className="tbl">
+                  <thead>
+                    <tr>
+                      <th style={{width: 28}}>#</th>
+                      <th>Gruppo</th>
+                      <th className="num">Prat.</th>
+                      <th className="num">Netto</th>
+                      <th className="num">Ore</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {byGruppo.map((e,i) => (
+                      <tr key={i} className="clickable" onClick={() => onDrill({
+                        title: `Gruppo: ${e.key}`,
+                        subtitle: `Pratiche del gruppo`,
+                        pratiche: pratiche.filter(p => p.gruppo === e.key)
+                      })}>
+                        <td className="rank">{i+1}</td>
+                        <td>{e.key}</td>
+                        <td className="num">{fmtNum(e.count)}</td>
+                        <td className="num"><strong>{fmtEur(e.netto)}</strong></td>
+                        <td className="num muted">{e.ore > 0 ? fmtDec(e.ore, 0) + 'h' : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
       );
     };
 
-    const CompositionView = ({ data }) => {
-      const fys = useMemo(() => Array.from(new Set(data.map(r => r.FY))).sort(), [data]);
-
-      // New vs Backlog stacked
-      const newBackData = useMemo(() => {
-        const m = {};
-        for (const r of data) {
-          const nb = r.NEW_BACK || 'n.d.';
-          if (!m[r.FY]) m[r.FY] = { fy: r.FY };
-          m[r.FY][nb] = (m[r.FY][nb] || 0) + r.INVOICED;
-        }
-        return Object.values(m).sort((a,b) => a.fy.localeCompare(b.fy));
-      }, [data]);
-      const newBackKeys = useMemo(() => {
-        const s = new Set();
-        newBackData.forEach(r => Object.keys(r).forEach(k => { if (k !== 'fy') s.add(k); }));
-        return Array.from(s);
-      }, [newBackData]);
-
-      // Service Mode
-      const serviceModeData = useMemo(() => {
-        const m = {};
-        for (const r of data) {
-          const sm = r['SERVICE MODE'] && r['SERVICE MODE'] !== 0 ? String(r['SERVICE MODE']) : 'n.d.';
-          if (!m[r.FY]) m[r.FY] = { fy: r.FY };
-          m[r.FY][sm] = (m[r.FY][sm] || 0) + r.INVOICED;
-        }
-        return Object.values(m).sort((a,b) => a.fy.localeCompare(b.fy));
-      }, [data]);
-      const smKeys = useMemo(() => {
-        const s = new Set();
-        serviceModeData.forEach(r => Object.keys(r).forEach(k => { if (k !== 'fy') s.add(k); }));
-        return Array.from(s);
-      }, [serviceModeData]);
-
-      // Typology per FY stacked
-      const topTypologies = useMemo(() => {
-        const g = groupBy(data, r => r.TYPOLOGY).sort((a,b) => b.value - a.value).slice(0, 8);
-        return g.map(x => x.key);
-      }, [data]);
-      const typologyStacked = useMemo(() => {
-        const m = {};
-        for (const r of data) {
-          const t = topTypologies.includes(r.TYPOLOGY) ? r.TYPOLOGY : 'Altro';
-          if (!m[r.FY]) m[r.FY] = { fy: r.FY };
-          m[r.FY][t] = (m[r.FY][t] || 0) + r.INVOICED;
-        }
-        return Object.values(m).sort((a,b) => a.fy.localeCompare(b.fy));
-      }, [data, topTypologies]);
-
-      return (
-        <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
-          <div className="grid-2">
-            <div className="card">
-              <div className="card-head">
-                <div>
-                  <h3 className="card-title">New Biz vs Backlog</h3>
-                  <div className="card-sub">Composizione nuova attività / residuo per FY</div>
-                </div>
-              </div>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={newBackData} margin={{top: 10, right: 20, left: 0, bottom: 0}}>
-                  <CartesianGrid vertical={false} stroke="#eef2f6" />
-                  <XAxis dataKey="fy" tick={{fontSize: 11, fill: '#64748b'}} axisLine={false} tickLine={false} />
-                  <YAxis tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
-                  <Tooltip content={<TT />} />
-                  <Legend wrapperStyle={{fontSize: 11, paddingTop: 10}} iconType="circle" />
-                  {newBackKeys.map((k,i) => <Bar key={k} dataKey={k} stackId="a" fill={PALETTE[i % PALETTE.length]} />)}
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="card">
-              <div className="card-head">
-                <div>
-                  <h3 className="card-title">Service Mode</h3>
-                  <div className="card-sub">REC / BACKLOG per FY</div>
-                </div>
-              </div>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={serviceModeData} margin={{top: 10, right: 20, left: 0, bottom: 0}}>
-                  <CartesianGrid vertical={false} stroke="#eef2f6" />
-                  <XAxis dataKey="fy" tick={{fontSize: 11, fill: '#64748b'}} axisLine={false} tickLine={false} />
-                  <YAxis tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
-                  <Tooltip content={<TT />} />
-                  <Legend wrapperStyle={{fontSize: 11, paddingTop: 10}} iconType="circle" />
-                  {smKeys.map((k,i) => <Bar key={k} dataKey={k} stackId="a" fill={PALETTE[(i+3) % PALETTE.length]} />)}
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="card-head">
-              <div>
-                <h3 className="card-title">Mix prodotti per FY</h3>
-                <div className="card-sub">Top 8 typology + Altro, stacked per esercizio</div>
-              </div>
-            </div>
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={typologyStacked} margin={{top: 10, right: 20, left: 0, bottom: 0}}>
-                <CartesianGrid vertical={false} stroke="#eef2f6" />
-                <XAxis dataKey="fy" tick={{fontSize: 11, fill: '#64748b'}} axisLine={false} tickLine={false} />
-                <YAxis tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
-                <Tooltip content={<TT />} />
-                <Legend wrapperStyle={{fontSize: 11, paddingTop: 10}} iconType="circle" />
-                {[...topTypologies, 'Altro'].map((k,i) => <Bar key={k} dataKey={k} stackId="a" fill={PALETTE[i % PALETTE.length]} />)}
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      );
-    };
-
-    const DetailView = ({ data }) => {
-      const [sortBy, setSortBy] = useState('MONTH');
+    // --- Pratiche (full list aggregated) ---
+    const PraticheView = ({ pratiche, onDrill }) => {
+      const [sortBy, setSortBy] = useState('netto');
       const [sortDir, setSortDir] = useState('desc');
       const [page, setPage] = useState(1);
-      const perPage = 50;
+      const [search, setSearch] = useState('');
+      const [onlyNc, setOnlyNc] = useState(false);
+      const [onlyOpen, setOnlyOpen] = useState(false);
+      const perPage = 30;
+
+      const filtered = useMemo(() => {
+        let arr = pratiche;
+        if (onlyNc) arr = arr.filter(p => p.hasNc);
+        if (onlyOpen) arr = arr.filter(p => !p.isChiusa);
+        if (search) {
+          const q = search.toLowerCase();
+          arr = arr.filter(p => [p.idPratica, p.company, p.gruppo, p.typology, p.lines].filter(Boolean).some(v => String(v).toLowerCase().includes(q)));
+        }
+        return arr;
+      }, [pratiche, search, onlyNc, onlyOpen]);
 
       const sorted = useMemo(() => {
-        const arr = [...data];
+        const arr = [...filtered];
         arr.sort((a,b) => {
           let va = a[sortBy], vb = b[sortBy];
-          if (sortBy === 'MONTH') { va = a.MONTH ? a.MONTH.getTime() : 0; vb = b.MONTH ? b.MONTH.getTime() : 0; }
+          if (va instanceof Date) va = va.getTime();
+          if (vb instanceof Date) vb = vb.getTime();
+          if (va == null && vb == null) return 0;
+          if (va == null) return sortDir === 'asc' ? -1 : 1;
+          if (vb == null) return sortDir === 'asc' ? 1 : -1;
           if (typeof va === 'number' && typeof vb === 'number') return sortDir === 'asc' ? va - vb : vb - va;
-          va = va == null ? '' : String(va); vb = vb == null ? '' : String(vb);
+          va = String(va); vb = String(vb);
           return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
         });
         return arr;
-      }, [data, sortBy, sortDir]);
+      }, [filtered, sortBy, sortDir]);
 
-      useEffect(() => { setPage(1); }, [data, sortBy, sortDir]);
+      useEffect(() => { setPage(1); }, [filtered, sortBy, sortDir]);
       const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
       const pageData = sorted.slice((page-1) * perPage, page * perPage);
 
@@ -1139,33 +1909,172 @@
       };
 
       const exportCsv = () => {
-        const headers = ['FY','NEW_BACK','COMPANY','GRUPPO','LINES','LINES PRECISO','ID PRATICA','SALES','CONSULTANT','TYPOLOGY','FAMILY','SERVICE MODE','Type France','MONTH','INVOICED','Contributo ottenuto'];
+        const headers = ['ID PRATICA','COMPANY','GRUPPO','LINES','TYPOLOGY','FAMILY','SALES','CONSULTANT','FY','SERVICE MODE','N DOCS','N FTT','N NC','TOT FTT','TOT NC','NETTO','ORE','EUR/H','DATA AVVIO','DATA CHIUSURA','DURATA GG','OUTLIER','CONTRIBUTO','ULTIMA FTT DATA','ULTIMA FTT IMPORTO'];
+        const rows = sorted.map(p => [
+          p.idPratica, p.company, p.gruppo, p.lines, p.typology, p.family, p.sales, p.consultant, p.fy, p.serviceMode,
+          p.nDocs, p.nFtt, p.nNc, p.totFtt, p.totNc, p.netto, p.ore, p.eurPerOra != null ? p.eurPerOra : '',
+          isoDate(p.dataAvvio), isoDate(p.dataChiusura), p.durataGiorni != null ? p.durataGiorni : '',
+          p.avvioIsOutlier ? 'SI' : 'NO', p.contributo,
+          p.lastFttDate ? isoDate(p.lastFttDate) : '', p.lastFtt ? p.lastFtt.invoiced : ''
+        ]);
         const esc = (v) => {
           if (v == null) return '';
-          if (v instanceof Date) return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}-${String(v.getDate()).padStart(2,'0')}`;
-          const s = String(v);
-          return /[;"\n,]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
+          const s = typeof v === 'number' ? String(v).replace('.', ',') : String(v);
+          return /[;"\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
         };
         const lines = [headers.join(';')];
-        for (const r of sorted) {
-          lines.push(headers.map(h => esc(r[h])).join(';'));
-        }
+        for (const r of rows) lines.push(r.map(esc).join(';'));
         const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = `fatturato_filtrato_${new Date().toISOString().slice(0,10)}.csv`;
+        a.href = url; a.download = `pratiche_aggregate_${new Date().toISOString().slice(0,10)}.csv`;
         a.click();
         URL.revokeObjectURL(url);
       };
 
-      const SortIndicator = ({ col }) => sortBy !== col ? null : <span style={{marginLeft: 3, color: '#3b82f6'}}>{sortDir === 'asc' ? '↑' : '↓'}</span>;
+      const SI = ({ col }) => sortBy !== col ? null : <span style={{marginLeft: 3, color: '#3b82f6'}}>{sortDir === 'asc' ? '↑' : '↓'}</span>;
 
       return (
         <div className="card">
           <div className="card-head">
             <div>
-              <h3 className="card-title">Dettaglio fatture</h3>
-              <div className="card-sub">{fmtNum(data.length)} righe filtrate · pagina {page} di {totalPages}</div>
+              <h3 className="card-title">Pratiche aggregate</h3>
+              <div className="card-sub">{fmtNum(sorted.length)} pratiche · click su una riga per dettaglio documenti</div>
+            </div>
+            <div className="card-actions">
+              <input type="text" placeholder="Cerca cliente, pratica, typology..." value={search} onChange={e => setSearch(e.target.value)}
+                     style={{padding: '5px 10px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 11, outline: 'none', minWidth: 220}} />
+              <button className={`chip ${onlyNc ? 'active' : ''}`} onClick={() => setOnlyNc(!onlyNc)}>Con NC</button>
+              <button className={`chip ${onlyOpen ? 'active' : ''}`} onClick={() => setOnlyOpen(!onlyOpen)}>Aperte</button>
+              <button className="btn btn-outline btn-sm" onClick={exportCsv}>
+                <Icon name="download" size={12} /> Esporta CSV
+              </button>
+            </div>
+          </div>
+          <div className="tbl-wrap" style={{maxHeight: 640}}>
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th className="sortable" onClick={() => setSort('idPratica')}>ID Pratica<SI col="idPratica" /></th>
+                  <th className="sortable" onClick={() => setSort('company')}>Cliente<SI col="company" /></th>
+                  <th className="sortable" onClick={() => setSort('typology')}>Typology<SI col="typology" /></th>
+                  <th className="sortable" onClick={() => setSort('sales')}>Sales<SI col="sales" /></th>
+                  <th className="sortable" onClick={() => setSort('consultant')}>Tech<SI col="consultant" /></th>
+                  <th className="sortable" onClick={() => setSort('fy')}>FY<SI col="fy" /></th>
+                  <th className="num sortable" onClick={() => setSort('nDocs')}>Doc<SI col="nDocs" /></th>
+                  <th className="num sortable" onClick={() => setSort('netto')}>Netto<SI col="netto" /></th>
+                  <th className="num sortable" onClick={() => setSort('ore')}>Ore<SI col="ore" /></th>
+                  <th className="num sortable" onClick={() => setSort('eurPerOra')}>€/h<SI col="eurPerOra" /></th>
+                  <th className="sortable" onClick={() => setSort('dataAvvio')}>Avvio<SI col="dataAvvio" /></th>
+                  <th className="sortable" onClick={() => setSort('dataChiusura')}>Chiusura<SI col="dataChiusura" /></th>
+                  <th className="num sortable" onClick={() => setSort('durataGiorni')}>Durata<SI col="durataGiorni" /></th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageData.length === 0 && <tr><td colSpan="13" className="empty">Nessuna pratica con i filtri attivi</td></tr>}
+                {pageData.map((p, i) => (
+                  <tr key={i} className="clickable" onClick={() => onDrill({
+                    title: `Pratica: ${p.idPratica}`,
+                    subtitle: `${p.company} · ${p.typology || ''} · dettaglio`,
+                    pratiche: [p]
+                  })}>
+                    <td className="mono truncate" title={p.idPratica} style={{maxWidth: 240, fontSize: 11}}>{p.idPratica}</td>
+                    <td className="truncate" title={p.company} style={{maxWidth: 180}}>{p.company}</td>
+                    <td>{p.typology || '—'}</td>
+                    <td>{p.sales || '—'}</td>
+                    <td className="muted">{p.consultant || '—'}</td>
+                    <td><span className="badge">{p.fy}</span></td>
+                    <td className="num">
+                      {p.nDocs}
+                      {p.hasNc && <span className="badge nc" style={{marginLeft: 4}}>NC</span>}
+                    </td>
+                    <td className="num"><strong className={p.netto < 0 ? 'neg' : ''}>{fmtEur(p.netto)}</strong></td>
+                    <td className="num">{p.ore > 0 ? fmtDec(p.ore, 1) : '—'}</td>
+                    <td className="num muted">{p.eurPerOra != null ? fmtEur(p.eurPerOra) : '—'}</td>
+                    <td className="muted">
+                      {p.dataAvvio ? formatDate(p.dataAvvio) : '—'}
+                      {p.avvioIsOutlier && <span className="badge outlier" style={{marginLeft: 4}}>out</span>}
+                    </td>
+                    <td className="muted">{p.dataChiusura ? formatDate(p.dataChiusura) : <span className="badge open">aperta</span>}</td>
+                    <td className="num">{p.durataGiorni != null ? fmtDays(p.durataGiorni) : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="pagination">
+            <div>{fmtNum((page-1)*perPage + 1)}–{fmtNum(Math.min(page*perPage, sorted.length))} di {fmtNum(sorted.length)}</div>
+            <div className="pager">
+              <button className="btn btn-outline btn-sm" onClick={() => setPage(1)} disabled={page === 1}>«</button>
+              <button className="btn btn-outline btn-sm" onClick={() => setPage(p => Math.max(1, p-1))} disabled={page === 1}>‹</button>
+              <span style={{padding: '5px 10px', fontSize: 11, fontVariantNumeric: 'tabular-nums'}}>{page} / {totalPages}</span>
+              <button className="btn btn-outline btn-sm" onClick={() => setPage(p => Math.min(totalPages, p+1))} disabled={page === totalPages}>›</button>
+              <button className="btn btn-outline btn-sm" onClick={() => setPage(totalPages)} disabled={page === totalPages}>»</button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // --- Dettaglio documenti (riga per riga raw) ---
+    const DocumentiRawView = ({ docs }) => {
+      const [sortBy, setSortBy] = useState('month');
+      const [sortDir, setSortDir] = useState('desc');
+      const [page, setPage] = useState(1);
+      const perPage = 50;
+
+      const sorted = useMemo(() => {
+        const arr = [...docs];
+        arr.sort((a,b) => {
+          let va = a[sortBy], vb = b[sortBy];
+          if (va instanceof Date) va = va.getTime();
+          if (vb instanceof Date) vb = vb.getTime();
+          if (typeof va === 'number' && typeof vb === 'number') return sortDir === 'asc' ? va - vb : vb - va;
+          va = va == null ? '' : String(va); vb = vb == null ? '' : String(vb);
+          return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+        });
+        return arr;
+      }, [docs, sortBy, sortDir]);
+
+      useEffect(() => { setPage(1); }, [docs, sortBy, sortDir]);
+      const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
+      const pageData = sorted.slice((page-1) * perPage, page * perPage);
+
+      const setSort = (k) => {
+        if (sortBy === k) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+        else { setSortBy(k); setSortDir('desc'); }
+      };
+
+      const exportCsv = () => {
+        const headers = ['FY','TIPO DOC','COMPANY','GRUPPO','LINES','LINES PRECISO','ID PRATICA','SALES','CONSULTANT','TYPOLOGY','FAMILY','SERVICE MODE','TYPE FRANCE','MONTH','INVOICED','ORE LAVORATE','DATA AVVIO','DATA CHIUSURA','CONTRIBUTO'];
+        const rows = sorted.map(d => [
+          d.fy, d.tipoDoc, d.company, d.gruppo, d.lines, d.linesPreciso, d.idPratica,
+          d.sales, d.consultant, d.typology, d.family, d.serviceMode, d.typeFrance,
+          isoDate(d.month), d.invoiced, d.ore, isoDate(d.dataAvvio), isoDate(d.dataChiusura), d.contributo
+        ]);
+        const esc = (v) => {
+          if (v == null) return '';
+          const s = typeof v === 'number' ? String(v).replace('.', ',') : String(v);
+          return /[;"\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
+        };
+        const lines = [headers.join(';')];
+        for (const r of rows) lines.push(r.map(esc).join(';'));
+        const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `documenti_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      const SI = ({ col }) => sortBy !== col ? null : <span style={{marginLeft: 3, color: '#3b82f6'}}>{sortDir === 'asc' ? '↑' : '↓'}</span>;
+
+      return (
+        <div className="card">
+          <div className="card-head">
+            <div>
+              <h3 className="card-title">Documenti · vista raw</h3>
+              <div className="card-sub">{fmtNum(docs.length)} righe · una riga per documento (FTT o NC)</div>
             </div>
             <div className="card-actions">
               <button className="btn btn-outline btn-sm" onClick={exportCsv}>
@@ -1177,36 +2086,32 @@
             <table className="tbl">
               <thead>
                 <tr>
-                  <th className="sortable" onClick={() => setSort('MONTH')}>Data<SortIndicator col="MONTH" /></th>
-                  <th className="sortable" onClick={() => setSort('FY')}>FY<SortIndicator col="FY" /></th>
-                  <th className="sortable" onClick={() => setSort('COMPANY')}>Cliente<SortIndicator col="COMPANY" /></th>
-                  <th className="sortable" onClick={() => setSort('GRUPPO')}>Gruppo<SortIndicator col="GRUPPO" /></th>
-                  <th className="sortable" onClick={() => setSort('LINES')}>Lines<SortIndicator col="LINES" /></th>
-                  <th className="sortable" onClick={() => setSort('TYPOLOGY')}>Typology<SortIndicator col="TYPOLOGY" /></th>
-                  <th className="sortable" onClick={() => setSort('SALES')}>Sales<SortIndicator col="SALES" /></th>
-                  <th className="sortable" onClick={() => setSort('CONSULTANT')}>Tech<SortIndicator col="CONSULTANT" /></th>
-                  <th>Mode</th>
-                  <th className="num sortable" onClick={() => setSort('INVOICED')}>Fatturato<SortIndicator col="INVOICED" /></th>
-                  <th className="num sortable" onClick={() => setSort('Contributo ottenuto')}>Contrib.<SortIndicator col="Contributo ottenuto" /></th>
+                  <th className="sortable" onClick={() => setSort('month')}>Mese<SI col="month" /></th>
+                  <th className="sortable" onClick={() => setSort('tipoDoc')}>Tipo<SI col="tipoDoc" /></th>
+                  <th className="sortable" onClick={() => setSort('fy')}>FY<SI col="fy" /></th>
+                  <th className="sortable" onClick={() => setSort('company')}>Cliente<SI col="company" /></th>
+                  <th className="sortable" onClick={() => setSort('idPratica')}>ID Pratica<SI col="idPratica" /></th>
+                  <th className="sortable" onClick={() => setSort('lines')}>Lines<SI col="lines" /></th>
+                  <th className="sortable" onClick={() => setSort('typology')}>Typology<SI col="typology" /></th>
+                  <th className="sortable" onClick={() => setSort('sales')}>Sales<SI col="sales" /></th>
+                  <th className="sortable" onClick={() => setSort('consultant')}>Tech<SI col="consultant" /></th>
+                  <th className="num sortable" onClick={() => setSort('invoiced')}>Importo<SI col="invoiced" /></th>
                 </tr>
               </thead>
               <tbody>
-                {pageData.length === 0 && (
-                  <tr><td colSpan="11" className="empty">Nessun risultato con i filtri attivi</td></tr>
-                )}
-                {pageData.map((r, i) => (
-                  <tr key={i} className={r.INVOICED < 0 ? 'neg-row' : ''}>
-                    <td className="muted">{r.MONTH ? monthLabelLong(monthKey(r.MONTH)) : '—'}</td>
-                    <td><span className="badge">{r.FY}</span></td>
-                    <td className="truncate" title={r.COMPANY} style={{maxWidth: 220}}>{r.COMPANY}</td>
-                    <td className="truncate muted" title={r.GRUPPO} style={{maxWidth: 140}}>{r.GRUPPO || '—'}</td>
-                    <td className="truncate" title={r.LINES} style={{maxWidth: 180}}>{r.LINES || '—'}</td>
-                    <td>{r.TYPOLOGY || '—'}</td>
-                    <td>{r.SALES || '—'}</td>
-                    <td className="muted">{r.CONSULTANT || '—'}</td>
-                    <td>{r['SERVICE MODE'] && r['SERVICE MODE'] !== 0 ? <span className={`badge ${r['SERVICE MODE'] === 'REC' ? 'rec' : 'back'}`}>{r['SERVICE MODE']}</span> : '—'}</td>
-                    <td className="num"><strong>{fmtEur(r.INVOICED)}</strong></td>
-                    <td className="num muted">{r['Contributo ottenuto'] ? fmtEurShort(r['Contributo ottenuto']) : '—'}</td>
+                {pageData.length === 0 && <tr><td colSpan="10" className="empty">Nessun documento</td></tr>}
+                {pageData.map((d, i) => (
+                  <tr key={i} className={d.tipoDoc === 'NC' ? 'neg' : ''}>
+                    <td className="muted">{d.month ? formatDate(d.month) : '—'}</td>
+                    <td><span className={`badge ${d.tipoDoc === 'NC' ? 'nc' : 'ftt'}`}>{d.tipoDoc}</span></td>
+                    <td><span className="badge">{d.fy}</span></td>
+                    <td className="truncate" title={d.company} style={{maxWidth: 180}}>{d.company}</td>
+                    <td className="mono truncate" title={d.idPratica} style={{maxWidth: 220, fontSize: 11}}>{d.idPratica}</td>
+                    <td className="truncate" title={d.lines} style={{maxWidth: 160}}>{d.lines || '—'}</td>
+                    <td>{d.typology || '—'}</td>
+                    <td>{d.sales || '—'}</td>
+                    <td className="muted">{d.consultant || '—'}</td>
+                    <td className="num"><strong>{fmtEur(d.invoiced)}</strong></td>
                   </tr>
                 ))}
               </tbody>
@@ -1229,17 +2134,18 @@
     // ============== App ==============
 
     const DEFAULT_FILTERS = {
-      fy: [], sales: [], consultant: [], typology: [], family: [], serviceMode: [], newBack: [],
-      monthFrom: '', monthTo: '', search: '', signMode: 'all'
+      fy: [], sales: [], consultant: [], typology: [], family: [], serviceMode: [], newBack: [], tipoDoc: [],
+      monthFrom: '', monthTo: '', search: '', onlyWithOre: false, excludeOutliers: false
     };
 
     function App() {
-      const [rows, setRows] = useState([]);
+      const [rawDocs, setRawDocs] = useState([]);
       const [fileInfo, setFileInfo] = useState(null);
       const [loading, setLoading] = useState(false);
       const [error, setError] = useState(null);
       const [filters, setFilters] = useState(DEFAULT_FILTERS);
       const [tab, setTab] = useState('overview');
+      const [modal, setModal] = useState(null);
       const fileRef = useRef(null);
 
       const handleFile = useCallback(async (file) => {
@@ -1247,9 +2153,10 @@
         try {
           const result = await loadExcel(file);
           if (result.rows.length === 0) throw new Error('Nessun record trovato nel foglio. Verifica la struttura.');
-          setRows(result.rows);
-          setFileInfo({ name: file.name, sheet: result.sheet, count: result.rows.length });
+          setRawDocs(result.rows);
+          setFileInfo({ name: file.name, sheet: result.sheet, count: result.rows.length, keyMap: result.keyMap });
           setFilters(DEFAULT_FILTERS);
+          setTab('overview');
         } catch (e) {
           setError(e.message || 'Errore durante il caricamento del file');
         } finally {
@@ -1257,78 +2164,84 @@
         }
       }, []);
 
-      // Filter options (memoized from rows)
+      // Filter options (from raw docs)
       const opt = useMemo(() => {
-        if (!rows.length) return {};
-        const uniq = (k) => Array.from(new Set(rows.map(r => r[k]).filter(v => v != null && v !== '' && v !== 0))).sort((a,b) => String(a).localeCompare(String(b)));
+        if (!rawDocs.length) return {};
+        const uniq = (k) => Array.from(new Set(rawDocs.map(r => r[k]).filter(v => v != null && v !== ''))).sort((a,b) => String(a).localeCompare(String(b)));
         return {
-          fy: uniq('FY'),
-          sales: uniq('SALES'),
-          consultant: uniq('CONSULTANT'),
-          typology: uniq('TYPOLOGY'),
-          family: uniq('FAMILY'),
-          serviceMode: uniq('SERVICE MODE'),
-          newBack: uniq('NEW_BACK'),
+          fy: uniq('fy'),
+          sales: uniq('sales'),
+          consultant: uniq('consultant'),
+          typology: uniq('typology'),
+          family: uniq('family'),
+          serviceMode: uniq('serviceMode'),
+          newBack: uniq('newBack'),
+          tipoDoc: uniq('tipoDoc'),
         };
-      }, [rows]);
+      }, [rawDocs]);
 
-      // Apply filters
-      const filtered = useMemo(() => {
-        if (!rows.length) return [];
+      // Apply filters on raw docs
+      const filteredDocs = useMemo(() => {
+        if (!rawDocs.length) return [];
         const mFrom = fromMonthInput(filters.monthFrom);
         const mTo = fromMonthInput(filters.monthTo);
         const mToEnd = mTo ? new Date(mTo.getFullYear(), mTo.getMonth() + 1, 0, 23, 59, 59) : null;
         const q = filters.search.trim().toLowerCase();
-        return rows.filter(r => {
-          if (filters.fy.length && !filters.fy.includes(r.FY)) return false;
-          if (filters.sales.length && !filters.sales.includes(r.SALES)) return false;
-          if (filters.consultant.length && !filters.consultant.includes(r.CONSULTANT)) return false;
-          if (filters.typology.length && !filters.typology.includes(r.TYPOLOGY)) return false;
-          if (filters.family.length && !filters.family.includes(String(r.FAMILY))) return false;
-          if (filters.serviceMode.length && !filters.serviceMode.includes(String(r['SERVICE MODE']))) return false;
-          if (filters.newBack.length && !filters.newBack.includes(r.NEW_BACK)) return false;
-          if (filters.signMode === 'pos' && r.INVOICED < 0) return false;
-          if (filters.signMode === 'neg' && r.INVOICED >= 0) return false;
-          if (mFrom && r.MONTH && r.MONTH < mFrom) return false;
-          if (mToEnd && r.MONTH && r.MONTH > mToEnd) return false;
+        return rawDocs.filter(r => {
+          if (filters.fy.length && !filters.fy.includes(r.fy)) return false;
+          if (filters.sales.length && !filters.sales.includes(r.sales)) return false;
+          if (filters.consultant.length && !filters.consultant.includes(r.consultant)) return false;
+          if (filters.typology.length && !filters.typology.includes(r.typology)) return false;
+          if (filters.family.length && !filters.family.includes(r.family)) return false;
+          if (filters.serviceMode.length && !filters.serviceMode.includes(r.serviceMode)) return false;
+          if (filters.newBack.length && !filters.newBack.includes(r.newBack)) return false;
+          if (filters.tipoDoc.length && !filters.tipoDoc.includes(r.tipoDoc)) return false;
+          if (mFrom && r.month && r.month < mFrom) return false;
+          if (mToEnd && r.month && r.month > mToEnd) return false;
+          if (filters.onlyWithOre && (!r.ore || r.ore <= 0)) return false;
+          if (filters.excludeOutliers && isOutlier(r.dataAvvio)) return false;
           if (q) {
-            const hay = [r.COMPANY, r.GRUPPO, r.LINES, r['LINES PRECISO'], r['ID PRATICA']].filter(Boolean).join(' ').toLowerCase();
+            const hay = [r.company, r.gruppo, r.lines, r.linesPreciso, r.idPratica].filter(Boolean).join(' ').toLowerCase();
             if (!hay.includes(q)) return false;
           }
           return true;
         });
-      }, [rows, filters]);
+      }, [rawDocs, filters]);
+
+      // Aggregate to practice-level
+      const pratiche = useMemo(() => aggregatePratiche(filteredDocs), [filteredDocs]);
 
       // KPIs
       const kpis = useMemo(() => {
-        const tot = filtered.reduce((s,r) => s + (r.INVOICED || 0), 0);
-        const pos = filtered.filter(r => r.INVOICED >= 0).reduce((s,r) => s + r.INVOICED, 0);
-        const neg = filtered.filter(r => r.INVOICED < 0).reduce((s,r) => s + r.INVOICED, 0);
-        const negCount = filtered.filter(r => r.INVOICED < 0).length;
-        const companies = new Set(filtered.map(r => r.COMPANY)).size;
-        const groups = new Set(filtered.map(r => r.GRUPPO).filter(Boolean)).size;
-        const avgTicket = filtered.length ? tot / filtered.length : 0;
-        const contrib = filtered.reduce((s,r) => s + (r['Contributo ottenuto'] || 0), 0);
-        return { tot, pos, neg, negCount, companies, groups, avgTicket, contrib, count: filtered.length };
-      }, [filtered]);
+        const totNetto = pratiche.reduce((s,p) => s + p.netto, 0);
+        const totFtt = filteredDocs.filter(d => d.tipoDoc === 'FTT').reduce((s,d) => s + d.invoiced, 0);
+        const totNc = filteredDocs.filter(d => d.tipoDoc === 'NC').reduce((s,d) => s + d.invoiced, 0);
+        const totOre = pratiche.reduce((s,p) => s + (p.ore || 0), 0);
+        const eurOra = totOre > 0 ? totNetto / totOre : 0;
+        const conNc = pratiche.filter(p => p.hasNc).length;
+        const chiuse = pratiche.filter(p => p.isChiusa).length;
+        const durate = pratiche.filter(p => p.durataGiorni != null).map(p => p.durataGiorni);
+        const durMedia = durate.length ? durate.reduce((a,b) => a+b, 0) / durate.length : null;
+        return { totNetto, totFtt, totNc, totOre, eurOra, conNc, chiuse, durMedia, nPratiche: pratiche.length, nDocs: filteredDocs.length };
+      }, [pratiche, filteredDocs]);
 
       const activeFilterCount = [
         filters.fy.length, filters.sales.length, filters.consultant.length, filters.typology.length,
-        filters.family.length, filters.serviceMode.length, filters.newBack.length,
+        filters.family.length, filters.serviceMode.length, filters.newBack.length, filters.tipoDoc.length,
         filters.monthFrom ? 1 : 0, filters.monthTo ? 1 : 0, filters.search ? 1 : 0,
-        filters.signMode !== 'all' ? 1 : 0
+        filters.onlyWithOre ? 1 : 0, filters.excludeOutliers ? 1 : 0
       ].reduce((a,b) => a+b, 0);
 
       const resetFilters = () => setFilters(DEFAULT_FILTERS);
 
-      if (rows.length === 0) {
+      if (rawDocs.length === 0) {
         return (
           <div className="app">
             <div className="header">
               <div className="brand">
                 <div className="brand-mark">E</div>
                 <div className="brand-text">
-                  <h1>Report Fatturato Dinamico</h1>
+                  <h1>Report Fatturato & Pratiche</h1>
                   <p>EPSA Italy · Finanza agevolata</p>
                 </div>
               </div>
@@ -1340,12 +2253,15 @@
 
       const tabs = [
         { id: 'overview', label: 'Overview', icon: 'chart' },
-        { id: 'sales', label: 'Vendite', icon: 'trend' },
+        { id: 'pratiche', label: 'Pratiche', icon: 'briefcase' },
+        { id: 'tempi', label: 'Tempi lavorazione', icon: 'hourglass' },
+        { id: 'ore', label: 'Ore & €/h', icon: 'clock' },
+        { id: 'documenti', label: 'FTT & NC', icon: 'receipt' },
+        { id: 'sales', label: 'Sales', icon: 'trend' },
         { id: 'consultants', label: 'Consulenti', icon: 'users' },
-        { id: 'products', label: 'Prodotti', icon: 'package' },
+        { id: 'typology', label: 'Typology', icon: 'package' },
         { id: 'clients', label: 'Clienti', icon: 'award' },
-        { id: 'composition', label: 'Composizione', icon: 'layers' },
-        { id: 'detail', label: 'Dettaglio', icon: 'table' },
+        { id: 'rawdocs', label: 'Docs raw', icon: 'table' },
       ];
 
       return (
@@ -1354,14 +2270,14 @@
             <div className="brand">
               <div className="brand-mark">E</div>
               <div className="brand-text">
-                <h1>Report Fatturato Dinamico</h1>
+                <h1>Report Fatturato & Pratiche</h1>
                 <p>EPSA Italy · Finanza agevolata</p>
               </div>
             </div>
             <div className="header-actions">
               <div className="file-status">
                 <span className="dot"></span>
-                <span><strong>{fileInfo?.name}</strong> · {fileInfo?.sheet} · {fmtNum(fileInfo?.count)} righe</span>
+                <span><strong>{fileInfo?.name}</strong> · {fileInfo?.sheet} · {fmtNum(fileInfo?.count)} doc</span>
               </div>
               <button className="btn btn-ghost btn-sm" onClick={() => fileRef.current?.click()}>
                 <Icon name="upload" size={12} /> Cambia file
@@ -1386,8 +2302,8 @@
                 <ChipSelect options={opt.consultant || []} value={filters.consultant} onChange={v => setFilters(f => ({...f, consultant: v}))} />
               </div>
               <div className="filter-group">
-                <span className="filter-label">Service Mode</span>
-                <ChipSelect options={opt.serviceMode || []} value={filters.serviceMode} onChange={v => setFilters(f => ({...f, serviceMode: v}))} />
+                <span className="filter-label">Tipo Doc</span>
+                <ChipSelect options={opt.tipoDoc || []} value={filters.tipoDoc} onChange={v => setFilters(f => ({...f, tipoDoc: v}))} />
               </div>
             </div>
             <div className="filters-row" style={{marginTop: 12}}>
@@ -1398,6 +2314,10 @@
               <div className="filter-group">
                 <span className="filter-label">Family</span>
                 <ChipSelect options={opt.family || []} value={filters.family} onChange={v => setFilters(f => ({...f, family: v}))} />
+              </div>
+              <div className="filter-group">
+                <span className="filter-label">Service Mode</span>
+                <ChipSelect options={opt.serviceMode || []} value={filters.serviceMode} onChange={v => setFilters(f => ({...f, serviceMode: v}))} />
               </div>
               <div className="filter-group">
                 <span className="filter-label">New / Back</span>
@@ -1413,17 +2333,16 @@
                 <span className="filter-label">A mese</span>
                 <input type="month" value={filters.monthTo} onChange={e => setFilters(f => ({...f, monthTo: e.target.value}))} />
               </div>
-              <div className="filter-group">
-                <span className="filter-label">Segno</span>
-                <div className="seg">
-                  <button className={filters.signMode === 'all' ? 'active' : ''} onClick={() => setFilters(f => ({...f, signMode: 'all'}))}>Tutti</button>
-                  <button className={filters.signMode === 'pos' ? 'active' : ''} onClick={() => setFilters(f => ({...f, signMode: 'pos'}))}>Solo fatture</button>
-                  <button className={filters.signMode === 'neg' ? 'active' : ''} onClick={() => setFilters(f => ({...f, signMode: 'neg'}))}>Solo NC/penali</button>
-                </div>
-              </div>
               <div className="filter-group filter-compact">
                 <span className="filter-label">Ricerca</span>
                 <input type="text" placeholder="Cliente, gruppo, line, id pratica..." value={filters.search} onChange={e => setFilters(f => ({...f, search: e.target.value}))} />
+              </div>
+              <div className="filter-group">
+                <span className="filter-label">Opzioni</span>
+                <div style={{display: 'flex', gap: 4}}>
+                  <button className={`chip ${filters.onlyWithOre ? 'active' : ''}`} onClick={() => setFilters(f => ({...f, onlyWithOre: !f.onlyWithOre}))}>Solo con ore</button>
+                  <button className={`chip ${filters.excludeOutliers ? 'active' : ''}`} onClick={() => setFilters(f => ({...f, excludeOutliers: !f.excludeOutliers}))}>Escludi outlier</button>
+                </div>
               </div>
               <div className="filter-actions">
                 {activeFilterCount > 0 && <span className="filter-summary">{activeFilterCount} filtri attivi</span>}
@@ -1439,7 +2358,8 @@
             {tabs.map(t => (
               <button key={t.id} className={`tab-btn ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}>
                 {t.label}
-                {t.id === 'detail' && <span className="count">{fmtNum(kpis.count)}</span>}
+                {t.id === 'pratiche' && <span className="count">{fmtNum(kpis.nPratiche)}</span>}
+                {t.id === 'rawdocs' && <span className="count">{fmtNum(kpis.nDocs)}</span>}
               </button>
             ))}
           </div>
@@ -1447,29 +2367,44 @@
           <div className="main">
             {/* KPIs */}
             <div className="kpi-grid">
-              <Kpi label="Fatturato" value={fmtEur(kpis.tot)} sub={kpis.count ? `${fmtNum(kpis.count)} fatture` : null} variant="" />
-              <Kpi label="Ticket medio" value={fmtEur(kpis.avgTicket)} sub={`media per fattura`} variant="neutral" />
-              <Kpi label="Clienti attivi" value={fmtNum(kpis.companies)} sub={kpis.groups ? `${fmtNum(kpis.groups)} gruppi` : null} variant="alt" />
-              <Kpi label="Contributi ottenuti" value={fmtEurShort(kpis.contrib)} sub={`clienti beneficiari`} variant="warn" />
-              <Kpi label="Fatture positive" value={fmtEurShort(kpis.pos)} sub={`${fmtNum(kpis.count - kpis.negCount)} fatture`} variant="alt" subVariant="pos" />
-              {kpis.negCount > 0 && (
-                <Kpi label="Note credito / Penali" value={fmtEurShort(kpis.neg)} sub={`${fmtNum(kpis.negCount)} movimenti`} variant="danger" subVariant="neg" />
-              )}
+              <Kpi label="Netto (FTT-NC)" value={fmtEur(kpis.totNetto)} sub={`${fmtNum(kpis.nPratiche)} pratiche · ${fmtNum(kpis.nDocs)} doc`} />
+              <Kpi label="Totale FTT" value={fmtEurShort(kpis.totFtt)} variant="alt" subVariant="pos" sub="fatture emesse" />
+              <Kpi label="Totale NC" value={fmtEurShort(kpis.totNc)} variant="danger" subVariant="neg" sub={`${fmtNum(kpis.conNc)} pratiche con NC`} />
+              <Kpi label="Ore lavorate" value={fmtDec(kpis.totOre, 0) + ' h'} variant="violet" sub={kpis.totOre > 0 ? `${fmtEur(kpis.eurOra)}/h medio` : null} />
+              <Kpi label="Durata media" value={fmtDays(kpis.durMedia)} variant="warn" sub={`${fmtNum(kpis.chiuse)}/${fmtNum(kpis.nPratiche)} chiuse`} />
+              <Kpi label="Contributi ottenuti" value={fmtEurShort(pratiche.reduce((s,p) => s + (p.contributo||0), 0))} variant="neutral" />
             </div>
 
             {/* Tab content */}
-            {tab === 'overview' && <OverviewView data={filtered} />}
-            {tab === 'sales' && <RankingView data={filtered} dim="SALES" label="Sales" />}
-            {tab === 'consultants' && <RankingView data={filtered} dim="CONSULTANT" label="Consulenti" />}
-            {tab === 'products' && <ProductsView data={filtered} />}
-            {tab === 'clients' && <ClientsView data={filtered} />}
-            {tab === 'composition' && <CompositionView data={filtered} />}
-            {tab === 'detail' && <DetailView data={filtered} />}
-
-            {filtered.length === 0 && tab !== 'detail' && (
-              <div className="card empty">Nessun dato con i filtri attivi. <button className="btn btn-outline btn-sm" style={{marginLeft: 10}} onClick={resetFilters}>Reset filtri</button></div>
+            {pratiche.length === 0 ? (
+              <div className="card empty">
+                Nessun dato con i filtri attivi.
+                <button className="btn btn-outline btn-sm" style={{marginLeft: 10}} onClick={resetFilters}>Reset filtri</button>
+              </div>
+            ) : (
+              <>
+                {tab === 'overview' && <OverviewView pratiche={pratiche} docs={filteredDocs} onDrill={setModal} />}
+                {tab === 'pratiche' && <PraticheView pratiche={pratiche} onDrill={setModal} />}
+                {tab === 'tempi' && <TempiView pratiche={pratiche} onDrill={setModal} />}
+                {tab === 'ore' && <OreView pratiche={pratiche} onDrill={setModal} />}
+                {tab === 'documenti' && <DocumentiView pratiche={pratiche} docs={filteredDocs} onDrill={setModal} />}
+                {tab === 'sales' && <RankingView pratiche={pratiche} dim="sales" label="Sales" onDrill={setModal} />}
+                {tab === 'consultants' && <RankingView pratiche={pratiche} dim="consultant" label="Consulente" onDrill={setModal} />}
+                {tab === 'typology' && <RankingView pratiche={pratiche} dim="typology" label="Typology" onDrill={setModal} />}
+                {tab === 'clients' && <ClientiView pratiche={pratiche} onDrill={setModal} />}
+                {tab === 'rawdocs' && <DocumentiRawView docs={filteredDocs} />}
+              </>
             )}
           </div>
+
+          {modal && (
+            <PraticheModal
+              title={modal.title}
+              subtitle={modal.subtitle}
+              pratiche={modal.pratiche}
+              onClose={() => setModal(null)}
+            />
+          )}
         </div>
       );
     }
