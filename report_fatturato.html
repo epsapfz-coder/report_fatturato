@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EPSA · Report Fatturato Dinamico</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+
+  <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+  <script crossorigin src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <script crossorigin src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --bg-soft: #eef1f5;
+      --card: #ffffff;
+      --ink: #0b1220;
+      --ink-2: #1e293b;
+      --muted: #64748b;
+      --muted-2: #94a3b8;
+      --line: #e2e8f0;
+      --line-2: #eef2f6;
+      --accent: #1e40af;
+      --accent-2: #3b82f6;
+      --accent-soft: #eef4ff;
+      --success: #0f9d68;
+      --success-soft: #e7f6ef;
+      --warning: #c27803;
+      --warning-soft: #fdf4e3;
+      --danger: #c5291f;
+      --danger-soft: #fdebe9;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --shadow-xs: 0 1px 1px rgba(15,23,42,.04);
+      --shadow-sm: 0 1px 2px rgba(15,23,42,.05), 0 1px 1px rgba(15,23,42,.03);
+      --shadow: 0 2px 6px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.04);
+      --shadow-lg: 0 16px 40px -8px rgba(15,23,42,.15), 0 4px 12px rgba(15,23,42,.06);
+    }
+
+    * { box-sizing: border-box; }
+    html, body, #root { height: 100%; }
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-feature-settings: "cv02","cv03","cv04","cv11";
+      background: var(--bg);
+      color: var(--ink);
+      font-size: 13px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    input { font: inherit; color: inherit; }
+    a { color: var(--accent); text-decoration: none; }
+
+    /* --- Layout --- */
+    .app { min-height: 100vh; display: flex; flex-direction: column; }
+
+    .header {
+      background: #0b1220;
+      color: #f8fafc;
+      padding: 14px 28px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+      position: sticky; top: 0; z-index: 50;
+    }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-mark {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+      display: grid; place-items: center;
+      font-weight: 800; font-size: 13px; color: white;
+      box-shadow: 0 4px 10px rgba(59,130,246,.3);
+    }
+    .brand-text h1 { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: -.01em; }
+    .brand-text p { margin: 0; font-size: 11px; color: #94a3b8; font-weight: 400; }
+
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+    .file-status {
+      font-size: 11px; color: #94a3b8;
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 10px; border-radius: 6px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.05);
+    }
+    .file-status strong { color: #e2e8f0; font-weight: 600; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,.15); }
+    .dot.warn { background: var(--warning); box-shadow: 0 0 0 3px rgba(245,158,11,.2); }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 12px; border-radius: 7px;
+      font-size: 12px; font-weight: 600;
+      transition: all .15s ease;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .btn-primary { background: var(--accent-2); color: white; }
+    .btn-primary:hover { background: var(--accent); }
+    .btn-ghost { background: rgba(255,255,255,.04); color: #e2e8f0; border-color: rgba(255,255,255,.08); }
+    .btn-ghost:hover { background: rgba(255,255,255,.08); }
+    .btn-outline { background: var(--card); color: var(--ink-2); border: 1px solid var(--line); }
+    .btn-outline:hover { background: var(--bg-soft); border-color: #cbd5e1; }
+    .btn-sm { padding: 5px 9px; font-size: 11px; }
+
+    /* --- Upload --- */
+    .upload-wrap { padding: 48px 28px; display: grid; place-items: center; flex: 1; }
+    .upload {
+      max-width: 540px; width: 100%;
+      background: var(--card);
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 16px;
+      padding: 40px 32px;
+      text-align: center;
+      transition: all .2s ease;
+    }
+    .upload.drag { border-color: var(--accent-2); background: var(--accent-soft); }
+    .upload h2 { margin: 16px 0 6px; font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+    .upload p { margin: 0 0 20px; color: var(--muted); font-size: 13px; }
+    .upload-icon {
+      width: 52px; height: 52px; margin: 0 auto; border-radius: 12px;
+      background: linear-gradient(135deg, #dbeafe 0%, #ede9fe 100%);
+      display: grid; place-items: center;
+      color: var(--accent);
+    }
+    .upload-cta { margin-top: 14px; display: flex; justify-content: center; gap: 10px; }
+    .upload-hint { margin-top: 16px; font-size: 11px; color: var(--muted-2); font-family: 'JetBrains Mono', monospace; }
+    input[type="file"] { display: none; }
+
+    .err {
+      background: var(--danger-soft); color: var(--danger);
+      border: 1px solid #fecaca; padding: 10px 14px;
+      border-radius: 8px; font-size: 12px; margin-top: 16px;
+      text-align: left;
+    }
+
+    /* --- Filters --- */
+    .filters {
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 28px;
+      position: sticky; top: 61px; z-index: 40;
+    }
+    .filters-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+    .filter-group { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+    .filter-label {
+      font-size: 10px; font-weight: 700; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 4px; }
+    .chip {
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      font-size: 11px; font-weight: 500;
+      color: var(--ink-2);
+      transition: all .12s ease;
+      white-space: nowrap;
+    }
+    .chip:hover { border-color: #94a3b8; background: var(--bg-soft); }
+    .chip.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+    .chip.active:hover { background: var(--ink-2); }
+
+    .filter-divider { width: 1px; background: var(--line); align-self: stretch; margin: 0 4px; }
+
+    .filter-compact input[type="month"] {
+      padding: 5px 8px; border: 1px solid var(--line);
+      border-radius: 6px; font-size: 11px;
+      background: var(--card); outline: none;
+      width: 130px;
+    }
+    .filter-compact input[type="month"]:focus { border-color: var(--accent-2); }
+    .filter-compact input[type="text"] {
+      padding: 5px 10px; border: 1px solid var(--line);
+      border-radius: 6px; font-size: 11px;
+      background: var(--card); outline: none; min-width: 200px;
+    }
+    .filter-compact input[type="text"]:focus { border-color: var(--accent-2); }
+
+    .filter-actions {
+      display: flex; align-items: flex-end; gap: 8px; margin-left: auto;
+    }
+
+    .toggle {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 11px; font-weight: 500;
+      color: var(--muted); cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+    }
+    .toggle input { margin: 0; }
+
+    .filter-summary {
+      font-size: 11px; color: var(--muted);
+      padding: 4px 10px;
+      background: var(--bg-soft);
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* --- Tabs --- */
+    .tabs {
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+      padding: 0 28px;
+      display: flex; gap: 0;
+      overflow-x: auto;
+      position: sticky; top: calc(61px + 69px); z-index: 30;
+    }
+    @media (max-width: 1200px) { .tabs { top: auto; position: static; } }
+
+    .tab-btn {
+      padding: 11px 14px;
+      font-size: 12px; font-weight: 600;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: all .12s ease;
+    }
+    .tab-btn:hover { color: var(--ink-2); }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent-2);
+    }
+    .tab-btn .count {
+      display: inline-block; margin-left: 4px;
+      padding: 1px 6px; border-radius: 10px;
+      font-size: 10px; font-weight: 700;
+      background: var(--bg-soft); color: var(--muted);
+    }
+    .tab-btn.active .count { background: var(--accent-soft); color: var(--accent); }
+
+    /* --- Main --- */
+    .main { padding: 20px 28px 40px; display: flex; flex-direction: column; gap: 20px; }
+
+    /* --- KPI --- */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 10px;
+    }
+    .kpi {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; background: var(--accent-2);
+    }
+    .kpi.kpi-alt::before { background: var(--success); }
+    .kpi.kpi-warn::before { background: var(--warning); }
+    .kpi.kpi-danger::before { background: var(--danger); }
+    .kpi.kpi-neutral::before { background: #cbd5e1; }
+    .kpi-label {
+      font-size: 10px; font-weight: 700; letter-spacing: .05em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .kpi-value {
+      font-size: 20px; font-weight: 700; letter-spacing: -.02em;
+      color: var(--ink); font-variant-numeric: tabular-nums;
+    }
+    .kpi-sub {
+      font-size: 11px; color: var(--muted); margin-top: 3px;
+      font-variant-numeric: tabular-nums;
+    }
+    .kpi-sub .pos { color: var(--success); font-weight: 600; }
+    .kpi-sub .neg { color: var(--danger); font-weight: 600; }
+
+    /* --- Card --- */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow-xs);
+    }
+    .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
+    .card-title { font-size: 13px; font-weight: 700; color: var(--ink); margin: 0; letter-spacing: -.005em; }
+    .card-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .card-actions { display: flex; gap: 6px; align-items: center; }
+    .seg {
+      display: inline-flex; border: 1px solid var(--line);
+      border-radius: 6px; overflow: hidden;
+      background: var(--card);
+    }
+    .seg button {
+      padding: 4px 9px; font-size: 11px; font-weight: 600;
+      color: var(--muted); border-right: 1px solid var(--line);
+    }
+    .seg button:last-child { border-right: none; }
+    .seg button.active { background: var(--ink); color: #fff; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+    @media (max-width: 1000px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+    /* --- Tables --- */
+    .tbl-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+    .tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .tbl th {
+      position: sticky; top: 0;
+      background: var(--bg-soft);
+      padding: 8px 12px; text-align: left;
+      font-weight: 600; font-size: 10px;
+      text-transform: uppercase; letter-spacing: .05em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--line);
+      white-space: nowrap;
+    }
+    .tbl th.sortable { cursor: pointer; user-select: none; }
+    .tbl th.sortable:hover { color: var(--ink-2); background: #e2e8f0; }
+    .tbl th.num, .tbl td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .tbl td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--line-2);
+      white-space: nowrap;
+    }
+    .tbl tr:last-child td { border-bottom: none; }
+    .tbl tr:hover td { background: var(--bg-soft); }
+    .tbl .rank { color: var(--muted); font-variant-numeric: tabular-nums; width: 28px; }
+    .tbl .truncate { max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
+    .tbl .num strong { font-weight: 700; }
+    .tbl .neg-row td { color: var(--danger); }
+
+    .bar-cell {
+      position: relative; min-width: 100px;
+      height: 16px; display: flex; align-items: center;
+    }
+    .bar-cell .bar {
+      position: absolute; left: 0; top: 0; bottom: 0;
+      background: linear-gradient(90deg, var(--accent-2), var(--accent));
+      border-radius: 3px; opacity: .15;
+    }
+    .bar-cell .bar.neg { background: linear-gradient(90deg, #fca5a5, var(--danger)); }
+    .bar-cell span { position: relative; z-index: 1; padding-right: 6px; font-variant-numeric: tabular-nums; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 10px; font-weight: 600;
+      background: var(--bg-soft); color: var(--muted);
+    }
+    .badge.rec { background: var(--accent-soft); color: var(--accent); }
+    .badge.back { background: #faf5ff; color: #7e22ce; }
+    .badge.pos { background: var(--success-soft); color: var(--success); }
+    .badge.neg { background: var(--danger-soft); color: var(--danger); }
+
+    /* --- Empty states --- */
+    .empty {
+      text-align: center; padding: 40px 20px;
+      color: var(--muted); font-size: 13px;
+    }
+
+    /* --- Tooltip --- */
+    .rc-tooltip {
+      background: var(--ink) !important;
+      color: white !important;
+      border-radius: 8px !important;
+      padding: 8px 12px !important;
+      font-size: 12px !important;
+      box-shadow: var(--shadow-lg) !important;
+      border: none !important;
+    }
+    .custom-tt {
+      background: #0b1220; color: #fff;
+      padding: 10px 12px; border-radius: 8px;
+      font-size: 11px; box-shadow: var(--shadow-lg);
+      min-width: 160px;
+    }
+    .custom-tt .tt-title { font-weight: 700; margin-bottom: 6px; font-size: 12px; color: #f1f5f9; }
+    .custom-tt .tt-row { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; }
+    .custom-tt .tt-row .k { color: #94a3b8; }
+    .custom-tt .tt-row .v { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    .chart-legend {
+      display: flex; flex-wrap: wrap; gap: 10px 16px;
+      font-size: 11px; color: var(--muted);
+    }
+    .chart-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    .chart-legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+    .muted { color: var(--muted); }
+
+    .pagination { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; font-size: 11px; color: var(--muted); }
+    .pagination .pager { display: flex; gap: 4px; }
+
+    .scroll-h { overflow-x: auto; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="env,react">
+    const { useState, useMemo, useCallback, useEffect, useRef } = React;
+    const {
+      BarChart, Bar, LineChart, Line, AreaChart, Area,
+      PieChart, Pie, Cell, ComposedChart,
+      XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList
+    } = Recharts;
+
+    // -------- Constants --------
+    const MONTHS_IT = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+    const PALETTE = [
+      '#1e40af', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b',
+      '#10b981', '#06b6d4', '#6366f1', '#f43f5e', '#84cc16',
+      '#a855f7', '#eab308', '#0ea5e9', '#22c55e', '#fb923c'
+    ];
+
+    // -------- Formatters --------
+    const fmtEur = (v, d=0) => new Intl.NumberFormat('it-IT', { style:'currency', currency:'EUR', maximumFractionDigits:d, minimumFractionDigits:d }).format(v || 0);
+    const fmtEurShort = (v) => {
+      const n = Number(v) || 0;
+      const a = Math.abs(n);
+      if (a >= 1e6) return (n/1e6).toLocaleString('it-IT', {maximumFractionDigits:1}) + 'M €';
+      if (a >= 1e3) return Math.round(n/1e3) + 'k €';
+      return fmtEur(n);
+    };
+    const fmtNum = (v) => new Intl.NumberFormat('it-IT').format(v || 0);
+    const fmtPct = (v, d=1) => new Intl.NumberFormat('it-IT', { style:'percent', maximumFractionDigits:d }).format(v || 0);
+
+    // -------- Date utils --------
+    const parseDate = (v) => {
+      if (v == null || v === '') return null;
+      if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
+      if (typeof v === 'number') { const d = new Date(Math.round((v - 25569) * 86400 * 1000)); return isNaN(d.getTime()) ? null : d; }
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? null : d;
+    };
+    const monthKey = (d) => d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` : '';
+    const monthLabel = (k) => { if (!k) return ''; const [y,m] = k.split('-'); return `${MONTHS_IT[+m-1]} '${y.slice(2)}`; };
+    const monthLabelLong = (k) => { if (!k) return ''; const [y,m] = k.split('-'); return `${MONTHS_IT[+m-1]} ${y}`; };
+    const fromMonthInput = (s) => { if (!s) return null; const [y,m] = s.split('-'); return new Date(+y, +m-1, 1); };
+    const toMonthInput = (d) => d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` : '';
+
+    // -------- Data processing --------
+    const TARGET_HEADERS = ['FY','COMPANY','INVOICED'];
+    const findHeaderRow = (rawRows) => {
+      for (let i = 0; i < Math.min(15, rawRows.length); i++) {
+        const r = rawRows[i] || [];
+        const strs = r.map(c => (c==null?'':String(c).trim()));
+        const found = TARGET_HEADERS.every(h => strs.includes(h));
+        if (found) return i;
+      }
+      return -1;
+    };
+
+    const loadExcel = async (file) => {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { cellDates: true });
+      const target = wb.SheetNames.find(n => n.toLowerCase().replace(/\s+/g,'') === 'tab_ftt_x_lines')
+        || wb.SheetNames.find(n => n.toLowerCase().includes('tab_ftt_x_lines'))
+        || wb.SheetNames.find(n => n.toLowerCase().includes('tab_ftt'))
+        || wb.SheetNames[0];
+      const sheet = wb.Sheets[target];
+      const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null, raw: true });
+      const hIdx = findHeaderRow(rawRows);
+      if (hIdx === -1) throw new Error(`Intestazione non trovata nel foglio "${target}". Sono richieste le colonne FY, COMPANY, INVOICED.`);
+      const headers = rawRows[hIdx].map(h => (h == null ? '' : String(h).trim()));
+      const out = [];
+      for (let i = hIdx + 1; i < rawRows.length; i++) {
+        const row = rawRows[i];
+        if (!row || row.every(c => c == null || c === '')) continue;
+        const obj = {};
+        headers.forEach((h, j) => { obj[h] = row[j]; });
+        if (!obj.FY || !obj.COMPANY) continue;
+        obj.INVOICED = Number(obj.INVOICED) || 0;
+        obj['Contributo ottenuto'] = Number(obj['Contributo ottenuto']) || 0;
+        obj.MONTH = parseDate(obj.MONTH);
+        obj.__mk = monthKey(obj.MONTH);
+        out.push(obj);
+      }
+      return { rows: out, sheet: target, total: wb.SheetNames };
+    };
+
+    // -------- Group by util --------
+    const groupBy = (arr, keyFn) => {
+      const m = new Map();
+      for (const r of arr) {
+        const k = keyFn(r);
+        if (k == null || k === '') continue;
+        const e = m.get(k) || { key: k, value: 0, positive: 0, negative: 0, count: 0, contribution: 0 };
+        const v = r.INVOICED || 0;
+        e.value += v;
+        if (v >= 0) e.positive += v; else e.negative += v;
+        e.count += 1;
+        e.contribution += (r['Contributo ottenuto'] || 0);
+        m.set(k, e);
+      }
+      return Array.from(m.values());
+    };
+
+    // ============== Components ==============
+
+    const Icon = ({ name, size = 16 }) => {
+      const paths = {
+        upload: 'M12 16V4m0 0L7 9m5-5l5 5M3 20h18',
+        file: 'M14 3v5h5M9 3h5l5 5v12a2 2 0 01-2 2H9a2 2 0 01-2-2V5a2 2 0 012-2z',
+        chart: 'M3 3v18h18M8 13v5M13 9v9M18 5v13',
+        users: 'M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75',
+        package: 'M12 2l9 5v10l-9 5-9-5V7l9-5zM3.3 7l8.7 5 8.7-5M12 22V12',
+        layers: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5',
+        table: 'M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18',
+        filter: 'M3 4h18l-7 8v7l-4-2v-5L3 4z',
+        x: 'M18 6L6 18M6 6l12 12',
+        search: 'M21 21l-4.35-4.35M17 10.5A6.5 6.5 0 1010.5 17 6.5 6.5 0 0017 10.5z',
+        download: 'M12 3v12m0 0l-5-5m5 5l5-5M4 21h16',
+        trend: 'M22 7L13.5 15.5 8.5 10.5 2 17M16 7h6v6',
+        award: 'M12 15a7 7 0 100-14 7 7 0 000 14zM8.21 13.89L7 22l5-3 5 3-1.21-8.11',
+        euro: 'M21 11a8 8 0 01-14.83 4M3 14c0-5 4-9 9-9m-8 1h7M4 10h7'
+      };
+      const d = paths[name];
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d={d} />
+        </svg>
+      );
+    };
+
+    const Upload = ({ onFile, error, loading }) => {
+      const [drag, setDrag] = useState(false);
+      const inputRef = useRef(null);
+      const onDrop = (e) => {
+        e.preventDefault(); setDrag(false);
+        const f = e.dataTransfer.files[0];
+        if (f) onFile(f);
+      };
+      return (
+        <div className="upload-wrap">
+          <div
+            className={`upload ${drag ? 'drag' : ''}`}
+            onDragOver={e => { e.preventDefault(); setDrag(true); }}
+            onDragLeave={() => setDrag(false)}
+            onDrop={onDrop}
+          >
+            <div className="upload-icon"><Icon name="upload" size={26} /></div>
+            <h2>Carica il file Fatture.xlsx</h2>
+            <p>Trascina qui il file Excel oppure seleziona dal disco.<br/>Verrà letto automaticamente il foglio <strong>tab_ftt_x_lines</strong>.</p>
+            <div className="upload-cta">
+              <button className="btn btn-primary" onClick={() => inputRef.current?.click()}>
+                <Icon name="file" size={14} /> {loading ? 'Caricamento...' : 'Seleziona file'}
+              </button>
+            </div>
+            <div className="upload-hint">.xlsx · .xlsm · elaborazione locale nel browser</div>
+            <input ref={inputRef} type="file" accept=".xlsx,.xlsm,.xls" onChange={e => e.target.files[0] && onFile(e.target.files[0])} />
+            {error && <div className="err">{error}</div>}
+          </div>
+        </div>
+      );
+    };
+
+    // --- Chips multi-select ---
+    const ChipSelect = ({ options, value, onChange, allLabel = 'Tutti' }) => {
+      const toggle = (v) => {
+        if (value.includes(v)) onChange(value.filter(x => x !== v));
+        else onChange([...value, v]);
+      };
+      return (
+        <div className="chip-row">
+          <button className={`chip ${value.length === 0 ? 'active' : ''}`} onClick={() => onChange([])}>{allLabel}</button>
+          {options.map(o => (
+            <button key={o} className={`chip ${value.includes(o) ? 'active' : ''}`} onClick={() => toggle(o)}>{o}</button>
+          ))}
+        </div>
+      );
+    };
+
+    // --- KPI card ---
+    const Kpi = ({ label, value, sub, variant, subVariant }) => (
+      <div className={`kpi ${variant ? 'kpi-' + variant : ''}`}>
+        <div className="kpi-label">{label}</div>
+        <div className="kpi-value">{value}</div>
+        {sub && <div className="kpi-sub"><span className={subVariant || ''}>{sub}</span></div>}
+      </div>
+    );
+
+    // --- Tooltip personalizzato ---
+    const TT = ({ active, payload, label, title, prefix }) => {
+      if (!active || !payload || !payload.length) return null;
+      return (
+        <div className="custom-tt">
+          <div className="tt-title">{title ? title(label) : label}</div>
+          {payload.map((p, i) => (
+            <div className="tt-row" key={i}>
+              <span className="k" style={{color: p.color || p.stroke || '#94a3b8'}}>■ {p.name}</span>
+              <span className="v">{prefix === 'num' ? fmtNum(p.value) : fmtEur(p.value)}</span>
+            </div>
+          ))}
+        </div>
+      );
+    };
+
+    // --- Tabella con barra proporzionale ---
+    const RankingTable = ({ data, nameKey = 'key', showCount = true, showAvg = false, showContribution = false, maxRows = null, colorByRank = false }) => {
+      const rows = maxRows ? data.slice(0, maxRows) : data;
+      const max = Math.max(...rows.map(r => Math.abs(r.value)), 1);
+      const total = rows.reduce((s,r) => s + r.value, 0);
+      return (
+        <div className="tbl-wrap">
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th style={{width: 28}}>#</th>
+                <th>{nameKey === 'key' ? 'Voce' : nameKey}</th>
+                {showCount && <th className="num">Fatt.</th>}
+                <th className="num" style={{width: 260}}>Fatturato</th>
+                {showAvg && <th className="num">Media</th>}
+                {showContribution && <th className="num">Contributo</th>}
+                <th className="num">% Tot</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={r.key + i}>
+                  <td className="rank">{i + 1}</td>
+                  <td className="truncate" title={r.key}>{r.key}</td>
+                  {showCount && <td className="num">{fmtNum(r.count)}</td>}
+                  <td className="num">
+                    <div className="bar-cell">
+                      <div className={`bar ${r.value < 0 ? 'neg' : ''}`} style={{width: (Math.abs(r.value)/max * 100) + '%'}} />
+                      <span><strong>{fmtEur(r.value)}</strong></span>
+                    </div>
+                  </td>
+                  {showAvg && <td className="num">{fmtEur(r.count ? r.value / r.count : 0)}</td>}
+                  {showContribution && <td className="num muted">{r.contribution ? fmtEurShort(r.contribution) : '—'}</td>}
+                  <td className="num muted">{total ? fmtPct(r.value / total) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    };
+
+    // ============== Views per tab ==============
+
+    const OverviewView = ({ data }) => {
+      // Serie mensile
+      const monthly = useMemo(() => {
+        const g = groupBy(data.filter(r => r.__mk), r => r.__mk);
+        return g.sort((a,b) => a.key.localeCompare(b.key));
+      }, [data]);
+
+      // Per FY
+      const perFY = useMemo(() => {
+        return groupBy(data, r => r.FY).sort((a,b) => a.key.localeCompare(b.key));
+      }, [data]);
+
+      // Cumulative per FY per mese-in-FY (index 0..11)
+      const fyCumul = useMemo(() => {
+        const fys = {};
+        const sorted = [...data].filter(r => r.MONTH && r.FY).sort((a,b) => a.MONTH - b.MONTH);
+        for (const r of sorted) {
+          if (!fys[r.FY]) fys[r.FY] = {};
+          const k = r.__mk;
+          fys[r.FY][k] = (fys[r.FY][k] || 0) + r.INVOICED;
+        }
+        // Build a 12-month axis aligned by month index (1..12) for visual comparison
+        const result = {};
+        for (const fy of Object.keys(fys)) {
+          const months = Object.keys(fys[fy]).sort();
+          let cum = 0;
+          result[fy] = months.map(mk => {
+            cum += fys[fy][mk];
+            return { monthKey: mk, month: monthLabel(mk), cum };
+          });
+        }
+        return result;
+      }, [data]);
+
+      // Compose time chart
+      const barData = monthly.map(m => ({ key: m.key, label: monthLabel(m.key), value: m.value, positive: m.positive, negative: m.negative, count: m.count }));
+
+      return (
+        <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
+          <div className="card">
+            <div className="card-head">
+              <div>
+                <h3 className="card-title">Andamento fatturato mensile</h3>
+                <div className="card-sub">Serie temporale su {monthly.length} mesi · include positivi e negativi</div>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={280}>
+              <ComposedChart data={barData} margin={{top: 5, right: 20, left: 0, bottom: 0}}>
+                <defs>
+                  <linearGradient id="gPos" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={.9} />
+                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={.5} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} stroke="#eef2f6" />
+                <XAxis dataKey="label" tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                <YAxis tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
+                <Tooltip content={<TT />} />
+                <Bar dataKey="value" fill="url(#gPos)" radius={[4,4,0,0]} name="Fatturato" />
+                <Line type="monotone" dataKey="value" stroke="#1e40af" strokeWidth={1.5} dot={false} name="Trend" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="grid-2">
+            <div className="card">
+              <div className="card-head">
+                <div>
+                  <h3 className="card-title">Fatturato per FY</h3>
+                  <div className="card-sub">Confronto esercizi</div>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={perFY} margin={{top: 10, right: 10, left: 0, bottom: 0}}>
+                  <CartesianGrid vertical={false} stroke="#eef2f6" />
+                  <XAxis dataKey="key" tick={{fontSize: 11, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                  <YAxis tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
+                  <Tooltip content={<TT />} />
+                  <Bar dataKey="value" radius={[6,6,0,0]} name="Fatturato">
+                    {perFY.map((e,i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
+                    <LabelList dataKey="value" position="top" formatter={fmtEurShort} style={{fontSize: 10, fill: '#334155', fontWeight: 600}} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="card">
+              <div className="card-head">
+                <div>
+                  <h3 className="card-title">Cumulato per FY</h3>
+                  <div className="card-sub">Crescita progressiva nell'anno</div>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart margin={{top: 10, right: 20, left: 0, bottom: 0}}>
+                  <CartesianGrid vertical={false} stroke="#eef2f6" />
+                  <XAxis dataKey="month" type="category" allowDuplicatedCategory={false} tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                  <YAxis tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
+                  <Tooltip content={<TT />} />
+                  <Legend wrapperStyle={{fontSize: 11, paddingTop: 10}} iconType="circle" />
+                  {Object.entries(fyCumul).sort(([a],[b]) => a.localeCompare(b)).map(([fy, pts], i) => (
+                    <Line key={fy} data={pts} dataKey="cum" name={fy} stroke={PALETTE[i % PALETTE.length]} strokeWidth={2} dot={{r:2}} activeDot={{r:4}} />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const RankingView = ({ data, dim, label, icon, showContribution = false }) => {
+      const agg = useMemo(() => groupBy(data, r => r[dim]).sort((a,b) => b.value - a.value), [data, dim]);
+
+      // Breakdown per FY per ogni dim
+      const fys = useMemo(() => Array.from(new Set(data.map(r => r.FY))).sort(), [data]);
+      const byFY = useMemo(() => {
+        const m = {};
+        for (const r of data) {
+          const k = r[dim];
+          if (!k) continue;
+          if (!m[k]) m[k] = { key: k };
+          m[k][r.FY] = (m[k][r.FY] || 0) + r.INVOICED;
+        }
+        return Object.values(m).sort((a,b) => {
+          const sa = fys.reduce((s,f) => s + (a[f]||0), 0);
+          const sb = fys.reduce((s,f) => s + (b[f]||0), 0);
+          return sb - sa;
+        });
+      }, [data, dim, fys]);
+
+      return (
+        <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
+          <div className="card">
+            <div className="card-head">
+              <div>
+                <h3 className="card-title">Ranking {label}</h3>
+                <div className="card-sub">{agg.length} voci · ordinate per fatturato</div>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={Math.max(220, agg.length * 34)}>
+              <BarChart data={agg} layout="vertical" margin={{top: 5, right: 60, left: 10, bottom: 0}}>
+                <CartesianGrid horizontal={false} stroke="#eef2f6" />
+                <XAxis type="number" tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="key" tick={{fontSize: 11, fill: '#1e293b'}} axisLine={false} tickLine={false} width={120} />
+                <Tooltip content={<TT />} />
+                <Bar dataKey="value" radius={[0,4,4,0]} name="Fatturato">
+                  {agg.map((e,i) => <Cell key={i} fill={e.value < 0 ? '#ef4444' : PALETTE[i % PALETTE.length]} />)}
+                  <LabelList dataKey="value" position="right" formatter={fmtEurShort} style={{fontSize: 10, fill: '#334155', fontWeight: 600}} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="grid-2">
+            <div className="card">
+              <div className="card-head">
+                <h3 className="card-title">Dettaglio {label}</h3>
+              </div>
+              <RankingTable data={agg} showContribution={showContribution} showAvg={true} />
+            </div>
+
+            <div className="card">
+              <div className="card-head">
+                <div>
+                  <h3 className="card-title">Breakdown per FY</h3>
+                  <div className="card-sub">Fatturato per esercizio per ogni voce</div>
+                </div>
+              </div>
+              <div className="tbl-wrap">
+                <table className="tbl">
+                  <thead>
+                    <tr>
+                      <th>{label}</th>
+                      {fys.map(f => <th key={f} className="num">{f}</th>)}
+                      <th className="num">Totale</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {byFY.map((r,i) => {
+                      const tot = fys.reduce((s,f) => s + (r[f]||0), 0);
+                      return (
+                        <tr key={i}>
+                          <td className="truncate" title={r.key}>{r.key}</td>
+                          {fys.map(f => <td key={f} className="num muted">{r[f] ? fmtEurShort(r[f]) : '—'}</td>)}
+                          <td className="num"><strong>{fmtEurShort(tot)}</strong></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const ProductsView = ({ data }) => {
+      const byTypology = useMemo(() => groupBy(data, r => r.TYPOLOGY).sort((a,b) => b.value - a.value), [data]);
+      const byFamily = useMemo(() => groupBy(data, r => r.FAMILY && r.FAMILY !== 0 ? String(r.FAMILY) : 'n.d.').sort((a,b) => b.value - a.value), [data]);
+      const byTypeFrance = useMemo(() => groupBy(data, r => r['Type France']).sort((a,b) => b.value - a.value), [data]);
+      const byLinesPreciso = useMemo(() => groupBy(data, r => r['LINES PRECISO']).sort((a,b) => b.value - a.value).slice(0, 20), [data]);
+
+      return (
+        <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
+          <div className="grid-2">
+            <div className="card">
+              <div className="card-head">
+                <div>
+                  <h3 className="card-title">Typology</h3>
+                  <div className="card-sub">{byTypology.length} tipologie</div>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie data={byTypology} dataKey="value" nameKey="key" cx="50%" cy="50%" innerRadius={55} outerRadius={95} paddingAngle={2}>
+                    {byTypology.map((e,i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
+                  </Pie>
+                  <Tooltip content={<TT />} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="chart-legend">
+                {byTypology.map((e,i) => (
+                  <span className="chart-legend-item" key={i}>
+                    <span className="chart-legend-dot" style={{background: PALETTE[i % PALETTE.length]}} />
+                    {e.key} · {fmtEurShort(e.value)}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="card-head">
+                <div>
+                  <h3 className="card-title">Family</h3>
+                  <div className="card-sub">Macro-categorie R&D / PB / Others</div>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={byFamily} layout="vertical" margin={{top: 5, right: 60, left: 0, bottom: 0}}>
+                  <CartesianGrid horizontal={false} stroke="#eef2f6" />
+                  <XAxis type="number" tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="key" tick={{fontSize: 11, fill: '#1e293b'}} axisLine={false} tickLine={false} width={90} />
+                  <Tooltip content={<TT />} />
+                  <Bar dataKey="value" radius={[0,4,4,0]} name="Fatturato">
+                    {byFamily.map((e,i) => <Cell key={i} fill={PALETTE[(i+2) % PALETTE.length]} />)}
+                    <LabelList dataKey="value" position="right" formatter={fmtEurShort} style={{fontSize: 10, fill: '#334155', fontWeight: 600}} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-head">
+              <div>
+                <h3 className="card-title">Type France</h3>
+                <div className="card-sub">Classificazione categoria France</div>
+              </div>
+            </div>
+            <div className="grid-2">
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={byTypeFrance} margin={{top: 5, right: 20, left: 0, bottom: 0}}>
+                  <CartesianGrid vertical={false} stroke="#eef2f6" />
+                  <XAxis dataKey="key" tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} interval={0} angle={-15} textAnchor="end" height={50} />
+                  <YAxis tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
+                  <Tooltip content={<TT />} />
+                  <Bar dataKey="value" radius={[4,4,0,0]}>
+                    {byTypeFrance.map((e,i) => <Cell key={i} fill={PALETTE[(i+4) % PALETTE.length]} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <RankingTable data={byTypeFrance} />
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-head">
+              <div>
+                <h3 className="card-title">Top 20 Lines Preciso</h3>
+                <div className="card-sub">Linee di prodotto di maggior fatturato</div>
+              </div>
+            </div>
+            <RankingTable data={byLinesPreciso} showContribution={true} showAvg={true} />
+          </div>
+        </div>
+      );
+    };
+
+    const ClientsView = ({ data }) => {
+      const byCompany = useMemo(() => groupBy(data, r => r.COMPANY).sort((a,b) => b.value - a.value), [data]);
+      const byGruppo = useMemo(() => groupBy(data.filter(r => r.GRUPPO), r => r.GRUPPO).sort((a,b) => b.value - a.value), [data]);
+      const top20 = byCompany.slice(0, 20);
+
+      return (
+        <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
+          <div className="card">
+            <div className="card-head">
+              <div>
+                <h3 className="card-title">Top 20 clienti</h3>
+                <div className="card-sub">{byCompany.length} clienti nel perimetro filtrato</div>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={520}>
+              <BarChart data={top20} layout="vertical" margin={{top: 5, right: 60, left: 10, bottom: 0}}>
+                <CartesianGrid horizontal={false} stroke="#eef2f6" />
+                <XAxis type="number" tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="key" tick={{fontSize: 10, fill: '#1e293b'}} axisLine={false} tickLine={false} width={200} />
+                <Tooltip content={<TT />} />
+                <Bar dataKey="value" radius={[0,4,4,0]} fill="#1e40af">
+                  <LabelList dataKey="value" position="right" formatter={fmtEurShort} style={{fontSize: 10, fill: '#334155', fontWeight: 600}} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="grid-2">
+            <div className="card">
+              <div className="card-head">
+                <h3 className="card-title">Ranking completo clienti</h3>
+              </div>
+              <RankingTable data={byCompany} showContribution={true} showAvg={true} />
+            </div>
+
+            <div className="card">
+              <div className="card-head">
+                <div>
+                  <h3 className="card-title">Ranking gruppi</h3>
+                  <div className="card-sub">{byGruppo.length} gruppi mappati</div>
+                </div>
+              </div>
+              <RankingTable data={byGruppo} showContribution={true} />
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const CompositionView = ({ data }) => {
+      const fys = useMemo(() => Array.from(new Set(data.map(r => r.FY))).sort(), [data]);
+
+      // New vs Backlog stacked
+      const newBackData = useMemo(() => {
+        const m = {};
+        for (const r of data) {
+          const nb = r.NEW_BACK || 'n.d.';
+          if (!m[r.FY]) m[r.FY] = { fy: r.FY };
+          m[r.FY][nb] = (m[r.FY][nb] || 0) + r.INVOICED;
+        }
+        return Object.values(m).sort((a,b) => a.fy.localeCompare(b.fy));
+      }, [data]);
+      const newBackKeys = useMemo(() => {
+        const s = new Set();
+        newBackData.forEach(r => Object.keys(r).forEach(k => { if (k !== 'fy') s.add(k); }));
+        return Array.from(s);
+      }, [newBackData]);
+
+      // Service Mode
+      const serviceModeData = useMemo(() => {
+        const m = {};
+        for (const r of data) {
+          const sm = r['SERVICE MODE'] && r['SERVICE MODE'] !== 0 ? String(r['SERVICE MODE']) : 'n.d.';
+          if (!m[r.FY]) m[r.FY] = { fy: r.FY };
+          m[r.FY][sm] = (m[r.FY][sm] || 0) + r.INVOICED;
+        }
+        return Object.values(m).sort((a,b) => a.fy.localeCompare(b.fy));
+      }, [data]);
+      const smKeys = useMemo(() => {
+        const s = new Set();
+        serviceModeData.forEach(r => Object.keys(r).forEach(k => { if (k !== 'fy') s.add(k); }));
+        return Array.from(s);
+      }, [serviceModeData]);
+
+      // Typology per FY stacked
+      const topTypologies = useMemo(() => {
+        const g = groupBy(data, r => r.TYPOLOGY).sort((a,b) => b.value - a.value).slice(0, 8);
+        return g.map(x => x.key);
+      }, [data]);
+      const typologyStacked = useMemo(() => {
+        const m = {};
+        for (const r of data) {
+          const t = topTypologies.includes(r.TYPOLOGY) ? r.TYPOLOGY : 'Altro';
+          if (!m[r.FY]) m[r.FY] = { fy: r.FY };
+          m[r.FY][t] = (m[r.FY][t] || 0) + r.INVOICED;
+        }
+        return Object.values(m).sort((a,b) => a.fy.localeCompare(b.fy));
+      }, [data, topTypologies]);
+
+      return (
+        <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
+          <div className="grid-2">
+            <div className="card">
+              <div className="card-head">
+                <div>
+                  <h3 className="card-title">New Biz vs Backlog</h3>
+                  <div className="card-sub">Composizione nuova attività / residuo per FY</div>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={newBackData} margin={{top: 10, right: 20, left: 0, bottom: 0}}>
+                  <CartesianGrid vertical={false} stroke="#eef2f6" />
+                  <XAxis dataKey="fy" tick={{fontSize: 11, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                  <YAxis tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
+                  <Tooltip content={<TT />} />
+                  <Legend wrapperStyle={{fontSize: 11, paddingTop: 10}} iconType="circle" />
+                  {newBackKeys.map((k,i) => <Bar key={k} dataKey={k} stackId="a" fill={PALETTE[i % PALETTE.length]} />)}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="card">
+              <div className="card-head">
+                <div>
+                  <h3 className="card-title">Service Mode</h3>
+                  <div className="card-sub">REC / BACKLOG per FY</div>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={serviceModeData} margin={{top: 10, right: 20, left: 0, bottom: 0}}>
+                  <CartesianGrid vertical={false} stroke="#eef2f6" />
+                  <XAxis dataKey="fy" tick={{fontSize: 11, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                  <YAxis tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
+                  <Tooltip content={<TT />} />
+                  <Legend wrapperStyle={{fontSize: 11, paddingTop: 10}} iconType="circle" />
+                  {smKeys.map((k,i) => <Bar key={k} dataKey={k} stackId="a" fill={PALETTE[(i+3) % PALETTE.length]} />)}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-head">
+              <div>
+                <h3 className="card-title">Mix prodotti per FY</h3>
+                <div className="card-sub">Top 8 typology + Altro, stacked per esercizio</div>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={typologyStacked} margin={{top: 10, right: 20, left: 0, bottom: 0}}>
+                <CartesianGrid vertical={false} stroke="#eef2f6" />
+                <XAxis dataKey="fy" tick={{fontSize: 11, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                <YAxis tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
+                <Tooltip content={<TT />} />
+                <Legend wrapperStyle={{fontSize: 11, paddingTop: 10}} iconType="circle" />
+                {[...topTypologies, 'Altro'].map((k,i) => <Bar key={k} dataKey={k} stackId="a" fill={PALETTE[i % PALETTE.length]} />)}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      );
+    };
+
+    const DetailView = ({ data }) => {
+      const [sortBy, setSortBy] = useState('MONTH');
+      const [sortDir, setSortDir] = useState('desc');
+      const [page, setPage] = useState(1);
+      const perPage = 50;
+
+      const sorted = useMemo(() => {
+        const arr = [...data];
+        arr.sort((a,b) => {
+          let va = a[sortBy], vb = b[sortBy];
+          if (sortBy === 'MONTH') { va = a.MONTH ? a.MONTH.getTime() : 0; vb = b.MONTH ? b.MONTH.getTime() : 0; }
+          if (typeof va === 'number' && typeof vb === 'number') return sortDir === 'asc' ? va - vb : vb - va;
+          va = va == null ? '' : String(va); vb = vb == null ? '' : String(vb);
+          return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+        });
+        return arr;
+      }, [data, sortBy, sortDir]);
+
+      useEffect(() => { setPage(1); }, [data, sortBy, sortDir]);
+      const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
+      const pageData = sorted.slice((page-1) * perPage, page * perPage);
+
+      const setSort = (k) => {
+        if (sortBy === k) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+        else { setSortBy(k); setSortDir('desc'); }
+      };
+
+      const exportCsv = () => {
+        const headers = ['FY','NEW_BACK','COMPANY','GRUPPO','LINES','LINES PRECISO','ID PRATICA','SALES','CONSULTANT','TYPOLOGY','FAMILY','SERVICE MODE','Type France','MONTH','INVOICED','Contributo ottenuto'];
+        const esc = (v) => {
+          if (v == null) return '';
+          if (v instanceof Date) return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}-${String(v.getDate()).padStart(2,'0')}`;
+          const s = String(v);
+          return /[;"\n,]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
+        };
+        const lines = [headers.join(';')];
+        for (const r of sorted) {
+          lines.push(headers.map(h => esc(r[h])).join(';'));
+        }
+        const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `fatturato_filtrato_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      const SortIndicator = ({ col }) => sortBy !== col ? null : <span style={{marginLeft: 3, color: '#3b82f6'}}>{sortDir === 'asc' ? '↑' : '↓'}</span>;
+
+      return (
+        <div className="card">
+          <div className="card-head">
+            <div>
+              <h3 className="card-title">Dettaglio fatture</h3>
+              <div className="card-sub">{fmtNum(data.length)} righe filtrate · pagina {page} di {totalPages}</div>
+            </div>
+            <div className="card-actions">
+              <button className="btn btn-outline btn-sm" onClick={exportCsv}>
+                <Icon name="download" size={12} /> Esporta CSV
+              </button>
+            </div>
+          </div>
+          <div className="tbl-wrap" style={{maxHeight: 640}}>
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th className="sortable" onClick={() => setSort('MONTH')}>Data<SortIndicator col="MONTH" /></th>
+                  <th className="sortable" onClick={() => setSort('FY')}>FY<SortIndicator col="FY" /></th>
+                  <th className="sortable" onClick={() => setSort('COMPANY')}>Cliente<SortIndicator col="COMPANY" /></th>
+                  <th className="sortable" onClick={() => setSort('GRUPPO')}>Gruppo<SortIndicator col="GRUPPO" /></th>
+                  <th className="sortable" onClick={() => setSort('LINES')}>Lines<SortIndicator col="LINES" /></th>
+                  <th className="sortable" onClick={() => setSort('TYPOLOGY')}>Typology<SortIndicator col="TYPOLOGY" /></th>
+                  <th className="sortable" onClick={() => setSort('SALES')}>Sales<SortIndicator col="SALES" /></th>
+                  <th className="sortable" onClick={() => setSort('CONSULTANT')}>Tech<SortIndicator col="CONSULTANT" /></th>
+                  <th>Mode</th>
+                  <th className="num sortable" onClick={() => setSort('INVOICED')}>Fatturato<SortIndicator col="INVOICED" /></th>
+                  <th className="num sortable" onClick={() => setSort('Contributo ottenuto')}>Contrib.<SortIndicator col="Contributo ottenuto" /></th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageData.length === 0 && (
+                  <tr><td colSpan="11" className="empty">Nessun risultato con i filtri attivi</td></tr>
+                )}
+                {pageData.map((r, i) => (
+                  <tr key={i} className={r.INVOICED < 0 ? 'neg-row' : ''}>
+                    <td className="muted">{r.MONTH ? monthLabelLong(monthKey(r.MONTH)) : '—'}</td>
+                    <td><span className="badge">{r.FY}</span></td>
+                    <td className="truncate" title={r.COMPANY} style={{maxWidth: 220}}>{r.COMPANY}</td>
+                    <td className="truncate muted" title={r.GRUPPO} style={{maxWidth: 140}}>{r.GRUPPO || '—'}</td>
+                    <td className="truncate" title={r.LINES} style={{maxWidth: 180}}>{r.LINES || '—'}</td>
+                    <td>{r.TYPOLOGY || '—'}</td>
+                    <td>{r.SALES || '—'}</td>
+                    <td className="muted">{r.CONSULTANT || '—'}</td>
+                    <td>{r['SERVICE MODE'] && r['SERVICE MODE'] !== 0 ? <span className={`badge ${r['SERVICE MODE'] === 'REC' ? 'rec' : 'back'}`}>{r['SERVICE MODE']}</span> : '—'}</td>
+                    <td className="num"><strong>{fmtEur(r.INVOICED)}</strong></td>
+                    <td className="num muted">{r['Contributo ottenuto'] ? fmtEurShort(r['Contributo ottenuto']) : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="pagination">
+            <div>{fmtNum((page-1)*perPage + 1)}–{fmtNum(Math.min(page*perPage, sorted.length))} di {fmtNum(sorted.length)}</div>
+            <div className="pager">
+              <button className="btn btn-outline btn-sm" onClick={() => setPage(1)} disabled={page === 1}>«</button>
+              <button className="btn btn-outline btn-sm" onClick={() => setPage(p => Math.max(1, p-1))} disabled={page === 1}>‹</button>
+              <span style={{padding: '5px 10px', fontSize: 11, fontVariantNumeric: 'tabular-nums'}}>{page} / {totalPages}</span>
+              <button className="btn btn-outline btn-sm" onClick={() => setPage(p => Math.min(totalPages, p+1))} disabled={page === totalPages}>›</button>
+              <button className="btn btn-outline btn-sm" onClick={() => setPage(totalPages)} disabled={page === totalPages}>»</button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ============== App ==============
+
+    const DEFAULT_FILTERS = {
+      fy: [], sales: [], consultant: [], typology: [], family: [], serviceMode: [], newBack: [],
+      monthFrom: '', monthTo: '', search: '', signMode: 'all'
+    };
+
+    function App() {
+      const [rows, setRows] = useState([]);
+      const [fileInfo, setFileInfo] = useState(null);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState(null);
+      const [filters, setFilters] = useState(DEFAULT_FILTERS);
+      const [tab, setTab] = useState('overview');
+      const fileRef = useRef(null);
+
+      const handleFile = useCallback(async (file) => {
+        setLoading(true); setError(null);
+        try {
+          const result = await loadExcel(file);
+          if (result.rows.length === 0) throw new Error('Nessun record trovato nel foglio. Verifica la struttura.');
+          setRows(result.rows);
+          setFileInfo({ name: file.name, sheet: result.sheet, count: result.rows.length });
+          setFilters(DEFAULT_FILTERS);
+        } catch (e) {
+          setError(e.message || 'Errore durante il caricamento del file');
+        } finally {
+          setLoading(false);
+        }
+      }, []);
+
+      // Filter options (memoized from rows)
+      const opt = useMemo(() => {
+        if (!rows.length) return {};
+        const uniq = (k) => Array.from(new Set(rows.map(r => r[k]).filter(v => v != null && v !== '' && v !== 0))).sort((a,b) => String(a).localeCompare(String(b)));
+        return {
+          fy: uniq('FY'),
+          sales: uniq('SALES'),
+          consultant: uniq('CONSULTANT'),
+          typology: uniq('TYPOLOGY'),
+          family: uniq('FAMILY'),
+          serviceMode: uniq('SERVICE MODE'),
+          newBack: uniq('NEW_BACK'),
+        };
+      }, [rows]);
+
+      // Apply filters
+      const filtered = useMemo(() => {
+        if (!rows.length) return [];
+        const mFrom = fromMonthInput(filters.monthFrom);
+        const mTo = fromMonthInput(filters.monthTo);
+        const mToEnd = mTo ? new Date(mTo.getFullYear(), mTo.getMonth() + 1, 0, 23, 59, 59) : null;
+        const q = filters.search.trim().toLowerCase();
+        return rows.filter(r => {
+          if (filters.fy.length && !filters.fy.includes(r.FY)) return false;
+          if (filters.sales.length && !filters.sales.includes(r.SALES)) return false;
+          if (filters.consultant.length && !filters.consultant.includes(r.CONSULTANT)) return false;
+          if (filters.typology.length && !filters.typology.includes(r.TYPOLOGY)) return false;
+          if (filters.family.length && !filters.family.includes(String(r.FAMILY))) return false;
+          if (filters.serviceMode.length && !filters.serviceMode.includes(String(r['SERVICE MODE']))) return false;
+          if (filters.newBack.length && !filters.newBack.includes(r.NEW_BACK)) return false;
+          if (filters.signMode === 'pos' && r.INVOICED < 0) return false;
+          if (filters.signMode === 'neg' && r.INVOICED >= 0) return false;
+          if (mFrom && r.MONTH && r.MONTH < mFrom) return false;
+          if (mToEnd && r.MONTH && r.MONTH > mToEnd) return false;
+          if (q) {
+            const hay = [r.COMPANY, r.GRUPPO, r.LINES, r['LINES PRECISO'], r['ID PRATICA']].filter(Boolean).join(' ').toLowerCase();
+            if (!hay.includes(q)) return false;
+          }
+          return true;
+        });
+      }, [rows, filters]);
+
+      // KPIs
+      const kpis = useMemo(() => {
+        const tot = filtered.reduce((s,r) => s + (r.INVOICED || 0), 0);
+        const pos = filtered.filter(r => r.INVOICED >= 0).reduce((s,r) => s + r.INVOICED, 0);
+        const neg = filtered.filter(r => r.INVOICED < 0).reduce((s,r) => s + r.INVOICED, 0);
+        const negCount = filtered.filter(r => r.INVOICED < 0).length;
+        const companies = new Set(filtered.map(r => r.COMPANY)).size;
+        const groups = new Set(filtered.map(r => r.GRUPPO).filter(Boolean)).size;
+        const avgTicket = filtered.length ? tot / filtered.length : 0;
+        const contrib = filtered.reduce((s,r) => s + (r['Contributo ottenuto'] || 0), 0);
+        return { tot, pos, neg, negCount, companies, groups, avgTicket, contrib, count: filtered.length };
+      }, [filtered]);
+
+      const activeFilterCount = [
+        filters.fy.length, filters.sales.length, filters.consultant.length, filters.typology.length,
+        filters.family.length, filters.serviceMode.length, filters.newBack.length,
+        filters.monthFrom ? 1 : 0, filters.monthTo ? 1 : 0, filters.search ? 1 : 0,
+        filters.signMode !== 'all' ? 1 : 0
+      ].reduce((a,b) => a+b, 0);
+
+      const resetFilters = () => setFilters(DEFAULT_FILTERS);
+
+      if (rows.length === 0) {
+        return (
+          <div className="app">
+            <div className="header">
+              <div className="brand">
+                <div className="brand-mark">E</div>
+                <div className="brand-text">
+                  <h1>Report Fatturato Dinamico</h1>
+                  <p>EPSA Italy · Finanza agevolata</p>
+                </div>
+              </div>
+            </div>
+            <Upload onFile={handleFile} error={error} loading={loading} />
+          </div>
+        );
+      }
+
+      const tabs = [
+        { id: 'overview', label: 'Overview', icon: 'chart' },
+        { id: 'sales', label: 'Vendite', icon: 'trend' },
+        { id: 'consultants', label: 'Consulenti', icon: 'users' },
+        { id: 'products', label: 'Prodotti', icon: 'package' },
+        { id: 'clients', label: 'Clienti', icon: 'award' },
+        { id: 'composition', label: 'Composizione', icon: 'layers' },
+        { id: 'detail', label: 'Dettaglio', icon: 'table' },
+      ];
+
+      return (
+        <div className="app">
+          <div className="header">
+            <div className="brand">
+              <div className="brand-mark">E</div>
+              <div className="brand-text">
+                <h1>Report Fatturato Dinamico</h1>
+                <p>EPSA Italy · Finanza agevolata</p>
+              </div>
+            </div>
+            <div className="header-actions">
+              <div className="file-status">
+                <span className="dot"></span>
+                <span><strong>{fileInfo?.name}</strong> · {fileInfo?.sheet} · {fmtNum(fileInfo?.count)} righe</span>
+              </div>
+              <button className="btn btn-ghost btn-sm" onClick={() => fileRef.current?.click()}>
+                <Icon name="upload" size={12} /> Cambia file
+              </button>
+              <input ref={fileRef} type="file" accept=".xlsx,.xlsm,.xls" onChange={e => e.target.files[0] && handleFile(e.target.files[0])} />
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="filters">
+            <div className="filters-row">
+              <div className="filter-group">
+                <span className="filter-label">FY</span>
+                <ChipSelect options={opt.fy || []} value={filters.fy} onChange={v => setFilters(f => ({...f, fy: v}))} />
+              </div>
+              <div className="filter-group">
+                <span className="filter-label">Sales</span>
+                <ChipSelect options={opt.sales || []} value={filters.sales} onChange={v => setFilters(f => ({...f, sales: v}))} />
+              </div>
+              <div className="filter-group">
+                <span className="filter-label">Consultant</span>
+                <ChipSelect options={opt.consultant || []} value={filters.consultant} onChange={v => setFilters(f => ({...f, consultant: v}))} />
+              </div>
+              <div className="filter-group">
+                <span className="filter-label">Service Mode</span>
+                <ChipSelect options={opt.serviceMode || []} value={filters.serviceMode} onChange={v => setFilters(f => ({...f, serviceMode: v}))} />
+              </div>
+            </div>
+            <div className="filters-row" style={{marginTop: 12}}>
+              <div className="filter-group">
+                <span className="filter-label">Typology</span>
+                <ChipSelect options={opt.typology || []} value={filters.typology} onChange={v => setFilters(f => ({...f, typology: v}))} />
+              </div>
+              <div className="filter-group">
+                <span className="filter-label">Family</span>
+                <ChipSelect options={opt.family || []} value={filters.family} onChange={v => setFilters(f => ({...f, family: v}))} />
+              </div>
+              <div className="filter-group">
+                <span className="filter-label">New / Back</span>
+                <ChipSelect options={opt.newBack || []} value={filters.newBack} onChange={v => setFilters(f => ({...f, newBack: v}))} />
+              </div>
+            </div>
+            <div className="filters-row" style={{marginTop: 12, alignItems: 'center'}}>
+              <div className="filter-group filter-compact">
+                <span className="filter-label">Da mese</span>
+                <input type="month" value={filters.monthFrom} onChange={e => setFilters(f => ({...f, monthFrom: e.target.value}))} />
+              </div>
+              <div className="filter-group filter-compact">
+                <span className="filter-label">A mese</span>
+                <input type="month" value={filters.monthTo} onChange={e => setFilters(f => ({...f, monthTo: e.target.value}))} />
+              </div>
+              <div className="filter-group">
+                <span className="filter-label">Segno</span>
+                <div className="seg">
+                  <button className={filters.signMode === 'all' ? 'active' : ''} onClick={() => setFilters(f => ({...f, signMode: 'all'}))}>Tutti</button>
+                  <button className={filters.signMode === 'pos' ? 'active' : ''} onClick={() => setFilters(f => ({...f, signMode: 'pos'}))}>Solo fatture</button>
+                  <button className={filters.signMode === 'neg' ? 'active' : ''} onClick={() => setFilters(f => ({...f, signMode: 'neg'}))}>Solo NC/penali</button>
+                </div>
+              </div>
+              <div className="filter-group filter-compact">
+                <span className="filter-label">Ricerca</span>
+                <input type="text" placeholder="Cliente, gruppo, line, id pratica..." value={filters.search} onChange={e => setFilters(f => ({...f, search: e.target.value}))} />
+              </div>
+              <div className="filter-actions">
+                {activeFilterCount > 0 && <span className="filter-summary">{activeFilterCount} filtri attivi</span>}
+                <button className="btn btn-outline btn-sm" onClick={resetFilters} disabled={activeFilterCount === 0}>
+                  <Icon name="x" size={12} /> Reset
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="tabs">
+            {tabs.map(t => (
+              <button key={t.id} className={`tab-btn ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}>
+                {t.label}
+                {t.id === 'detail' && <span className="count">{fmtNum(kpis.count)}</span>}
+              </button>
+            ))}
+          </div>
+
+          <div className="main">
+            {/* KPIs */}
+            <div className="kpi-grid">
+              <Kpi label="Fatturato" value={fmtEur(kpis.tot)} sub={kpis.count ? `${fmtNum(kpis.count)} fatture` : null} variant="" />
+              <Kpi label="Ticket medio" value={fmtEur(kpis.avgTicket)} sub={`media per fattura`} variant="neutral" />
+              <Kpi label="Clienti attivi" value={fmtNum(kpis.companies)} sub={kpis.groups ? `${fmtNum(kpis.groups)} gruppi` : null} variant="alt" />
+              <Kpi label="Contributi ottenuti" value={fmtEurShort(kpis.contrib)} sub={`clienti beneficiari`} variant="warn" />
+              <Kpi label="Fatture positive" value={fmtEurShort(kpis.pos)} sub={`${fmtNum(kpis.count - kpis.negCount)} fatture`} variant="alt" subVariant="pos" />
+              {kpis.negCount > 0 && (
+                <Kpi label="Note credito / Penali" value={fmtEurShort(kpis.neg)} sub={`${fmtNum(kpis.negCount)} movimenti`} variant="danger" subVariant="neg" />
+              )}
+            </div>
+
+            {/* Tab content */}
+            {tab === 'overview' && <OverviewView data={filtered} />}
+            {tab === 'sales' && <RankingView data={filtered} dim="SALES" label="Sales" />}
+            {tab === 'consultants' && <RankingView data={filtered} dim="CONSULTANT" label="Consulenti" />}
+            {tab === 'products' && <ProductsView data={filtered} />}
+            {tab === 'clients' && <ClientsView data={filtered} />}
+            {tab === 'composition' && <CompositionView data={filtered} />}
+            {tab === 'detail' && <DetailView data={filtered} />}
+
+            {filtered.length === 0 && tab !== 'detail' && (
+              <div className="card empty">Nessun dato con i filtri attivi. <button className="btn btn-outline btn-sm" style={{marginLeft: 10}} onClick={resetFilters}>Reset filtri</button></div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
