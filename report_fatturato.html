@@ -478,7 +478,8 @@
     const {
       BarChart, Bar, LineChart, Line, AreaChart, Area,
       PieChart, Pie, Cell, ComposedChart, ScatterChart, Scatter, ZAxis,
-      XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, ReferenceLine
+      XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, ReferenceLine,
+      RadialBarChart, RadialBar, PolarAngleAxis
     } = Recharts;
 
     // ============== Constants ==============
@@ -620,9 +621,9 @@
           contributo: keyMap.CONTRIBUTO ? (Number(obj[keyMap.CONTRIBUTO]) || 0) : 0,
           family: keyMap.FAMILY ? (obj[keyMap.FAMILY] && obj[keyMap.FAMILY] !== 0 ? String(obj[keyMap.FAMILY]).trim() : 'n.d.') : 'n.d.',
           serviceMode: keyMap.SERVICE_MODE ? (obj[keyMap.SERVICE_MODE] && obj[keyMap.SERVICE_MODE] !== 0 ? String(obj[keyMap.SERVICE_MODE]).trim() : 'n.d.') : 'n.d.',
-          ore: keyMap.ORE ? (Number(obj[keyMap.ORE]) || 0) : 0,
-          dataAvvio: keyMap.DATA_AVVIO ? parseDate(obj[keyMap.DATA_AVVIO]) : null,
-          dataChiusura: keyMap.DATA_CHIUSURA ? parseDate(obj[keyMap.DATA_CHIUSURA]) : null,
+          ore: 0,
+          dataAvvio: null,
+          dataChiusura: null,
         };
         // Desume TIPO_DOC dal segno se mancante
         if (!r.tipoDoc) r.tipoDoc = r.invoiced < 0 ? 'NC' : 'FTT';
@@ -714,15 +715,10 @@
       const result = [];
       for (const p of map.values()) {
         p.docs.sort((a,b) => (a.month?.getTime() || 0) - (b.month?.getTime() || 0));
-        p.avvioIsOutlier = isOutlier(p.dataAvvio);
-        // durata (esclusi outlier)
-        if (!p.avvioIsOutlier && p.dataAvvio && p.dataChiusura) {
-          p.durataGiorni = daysBetween(p.dataAvvio, p.dataChiusura);
-        } else {
-          p.durataGiorni = null;
-        }
-        p.isChiusa = !!p.dataChiusura;
-        p.eurPerOra = p.ore > 0 ? p.netto / p.ore : null;
+        p.avvioIsOutlier = false;
+        p.durataGiorni = null;
+        p.isChiusa = false;
+        p.eurPerOra = null;
         // Il doc di riferimento: ultima FTT, se assente prendi ultimo doc qualsiasi
         if (!p.lastFtt) {
           const last = p.docs[p.docs.length - 1];
@@ -820,9 +816,7 @@
             <input ref={inputRef} type="file" accept=".xlsx,.xlsm,.xls" onChange={e => e.target.files[0] && onFile(e.target.files[0])} />
             <div className="req-list">
               <strong>Campi previsti sul foglio:</strong><br/>
-              <code>FY</code> · <code>TIPO DOC</code> <span className="muted">(FTT/NC)</span> · <code>COMPANY</code> · <code>ID PRATICA</code> · <code>SALES</code> · <code>CONSULTANT</code> · <code>TYPOLOGY</code> · <code>INVOICED</code> · <code>MONTH</code> · <code>ORE LAVORATE</code> · <code>Data avvio attività</code> · <code>Data chiusura effettiva</code>
-              <br/><br/>
-              <span className="muted">I record con <code>Data avvio = 01/01/2000</code> sono trattati come outlier ed esclusi dal calcolo dei tempi medi di lavorazione.</span>
+              <code>FY</code> · <code>TIPO DOC</code> <span className="muted">(FTT/NC)</span> · <code>COMPANY</code> · <code>ID PRATICA</code> · <code>SALES</code> · <code>CONSULTANT</code> · <code>TYPOLOGY</code> · <code>INVOICED</code> · <code>MONTH</code>
             </div>
             {error && <div className="err">{error}</div>}
           </div>
@@ -895,23 +889,17 @@
 
       const totals = useMemo(() => {
         const tot = pratiche.reduce((s,p) => s + p.netto, 0);
-        const ore = pratiche.reduce((s,p) => s + (p.ore || 0), 0);
-        const chiuse = pratiche.filter(p => p.isChiusa).length;
         const conNc = pratiche.filter(p => p.hasNc).length;
-        const durate = pratiche.filter(p => p.durataGiorni != null).map(p => p.durataGiorni);
-        const durMedia = durate.length ? durate.reduce((a,b) => a+b, 0) / durate.length : null;
-        return { tot, ore, chiuse, conNc, durMedia, total: pratiche.length };
+        return { tot, conNc, total: pratiche.length };
       }, [pratiche]);
 
       const exportCsv = () => {
-        const headers = ['ID PRATICA','COMPANY','GRUPPO','LINES','TYPOLOGY','FAMILY','SALES','CONSULTANT','FY','NEW_BACK','SERVICE MODE','N DOCS','N FTT','N NC','HAS NC','TOT FTT','TOT NC','NETTO','ORE','EUR/H','DATA AVVIO','DATA CHIUSURA','DURATA GG','AVVIO OUTLIER','CONTRIBUTO','ULTIMA FTT','ULTIMA FTT EURO'];
+        const headers = ['ID PRATICA','COMPANY','GRUPPO','LINES','TYPOLOGY','FAMILY','SALES','CONSULTANT','FY','NEW_BACK','SERVICE MODE','N DOCS','N FTT','N NC','HAS NC','TOT FTT','TOT NC','NETTO','CONTRIBUTO','ULTIMA FTT','ULTIMA FTT EURO'];
         const rows = sorted.map(p => [
           p.idPratica, p.company, p.gruppo, p.lines, p.typology, p.family,
           p.sales, p.consultant, p.fy, p.newBack, p.serviceMode,
           p.nDocs, p.nFtt, p.nNc, p.hasNc ? 'SI' : 'NO',
-          p.totFtt, p.totNc, p.netto, p.ore, p.eurPerOra != null ? p.eurPerOra : '',
-          isoDate(p.dataAvvio), isoDate(p.dataChiusura), p.durataGiorni != null ? p.durataGiorni : '',
-          p.avvioIsOutlier ? 'SI' : 'NO', p.contributo,
+          p.totFtt, p.totNc, p.netto, p.contributo,
           p.lastFtt ? (p.lastFtt.lines || '') : '', p.lastFtt ? p.lastFtt.invoiced : ''
         ]);
         const esc = (v) => {
@@ -945,9 +933,6 @@
               <div className="kpi-grid" style={{marginBottom: 14}}>
                 <Kpi label="Pratiche" value={fmtNum(totals.total)} />
                 <Kpi label="Netto totale" value={fmtEur(totals.tot)} variant="alt" />
-                <Kpi label="Ore" value={fmtHours(totals.ore)} variant="violet" />
-                <Kpi label="Durata media" value={fmtDays(totals.durMedia)} variant="warn" sub={`su chiuse non-outlier`} />
-                <Kpi label="Chiuse" value={`${totals.chiuse}/${totals.total}`} variant="neutral" />
                 <Kpi label="Con NC" value={fmtNum(totals.conNc)} variant={totals.conNc > 0 ? 'danger' : 'neutral'} />
               </div>
 
@@ -965,15 +950,10 @@
                       <th className="num sortable" onClick={() => setSort('totFtt')}>FTT<SI col="totFtt" /></th>
                       <th className="num sortable" onClick={() => setSort('totNc')}>NC<SI col="totNc" /></th>
                       <th className="num sortable" onClick={() => setSort('netto')}>Netto<SI col="netto" /></th>
-                      <th className="num sortable" onClick={() => setSort('ore')}>Ore<SI col="ore" /></th>
-                      <th className="num sortable" onClick={() => setSort('eurPerOra')}>€/h<SI col="eurPerOra" /></th>
-                      <th className="sortable" onClick={() => setSort('dataAvvio')}>Avvio<SI col="dataAvvio" /></th>
-                      <th className="sortable" onClick={() => setSort('dataChiusura')}>Chiusura<SI col="dataChiusura" /></th>
-                      <th className="num sortable" onClick={() => setSort('durataGiorni')}>Durata<SI col="durataGiorni" /></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {sorted.length === 0 && <tr><td colSpan="15" className="empty">Nessuna pratica</td></tr>}
+                    {sorted.length === 0 && <tr><td colSpan="10" className="empty">Nessuna pratica</td></tr>}
                     {sorted.map((p, i) => (
                       <tr key={i}>
                         <td className="mono truncate" title={p.idPratica} style={{maxWidth: 220, fontSize: 11}}>{p.idPratica}</td>
@@ -989,14 +969,6 @@
                         <td className="num muted">{p.totFtt ? fmtEurShort(p.totFtt) : '—'}</td>
                         <td className="num neg">{p.totNc ? fmtEurShort(p.totNc) : '—'}</td>
                         <td className="num"><strong className={p.netto < 0 ? 'neg' : ''}>{fmtEur(p.netto)}</strong></td>
-                        <td className="num">{p.ore > 0 ? fmtDec(p.ore, 1) : '—'}</td>
-                        <td className="num muted">{p.eurPerOra != null ? fmtEur(p.eurPerOra) : '—'}</td>
-                        <td className="muted">
-                          {p.dataAvvio ? formatDate(p.dataAvvio) : '—'}
-                          {p.avvioIsOutlier && <span className="badge outlier" style={{marginLeft: 4}}>outlier</span>}
-                        </td>
-                        <td className="muted">{p.dataChiusura ? formatDate(p.dataChiusura) : <span className="badge open">aperta</span>}</td>
-                        <td className="num">{p.durataGiorni != null ? fmtDays(p.durataGiorni) : '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1166,6 +1138,19 @@
 
       const total = agg.reduce((s,e) => s + e.netto, 0);
       const max = Math.max(...agg.map(e => Math.abs(e.netto)), 1);
+      const consultantRadial = useMemo(() => {
+        if (dim !== 'consultant') return [];
+        const top = agg.slice(0, 8);
+        const maxNetto = Math.max(...top.map(e => Math.abs(e.netto)), 1);
+        return top.map((e, i) => ({
+          key: e.key,
+          netto: e.netto,
+          count: e.count,
+          nettoShare: Math.abs(e.netto) / maxNetto * 100,
+          countShare: pratiche.length ? e.count / pratiche.length * 100 : 0,
+          fill: PALETTE[i % PALETTE.length]
+        }));
+      }, [dim, agg, pratiche.length]);
 
       return (
         <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
@@ -1196,6 +1181,43 @@
             </ResponsiveContainer>
           </div>
 
+          {dim === 'consultant' && consultantRadial.length > 0 && (
+            <div className="grid-2">
+              <div className="card">
+                <div className="card-head">
+                  <div>
+                    <h3 className="card-title">Consulenti · peso sul netto (radiale)</h3>
+                    <div className="card-sub">Top 8 per valore assoluto del netto</div>
+                  </div>
+                </div>
+                <ResponsiveContainer width="100%" height={320}>
+                  <RadialBarChart data={consultantRadial} innerRadius="25%" outerRadius="95%" startAngle={90} endAngle={-270}>
+                    <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+                    <RadialBar background dataKey="nettoShare" cornerRadius={8} />
+                    <Tooltip content={<TT title={(k) => `Consulente: ${k}`} valueFmt={v => fmtDec(v, 1) + '%'} />} />
+                    <Legend iconSize={10} layout="vertical" verticalAlign="middle" align="right" formatter={(v, e) => `${v} · ${fmtEurShort(e.payload.netto)}`} />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="card">
+                <div className="card-head">
+                  <div>
+                    <h3 className="card-title">Consulenti · quota pratiche (radiale)</h3>
+                    <div className="card-sub">Distribuzione % pratiche per consulente</div>
+                  </div>
+                </div>
+                <ResponsiveContainer width="100%" height={320}>
+                  <RadialBarChart data={consultantRadial} innerRadius="25%" outerRadius="95%" startAngle={90} endAngle={-270}>
+                    <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+                    <RadialBar background dataKey="countShare" cornerRadius={8} />
+                    <Tooltip content={<TT title={(k) => `Consulente: ${k}`} valueFmt={v => fmtDec(v, 1) + '%'} />} />
+                    <Legend iconSize={10} layout="vertical" verticalAlign="middle" align="right" formatter={(v, e) => `${v} · ${fmtNum(e.payload.count)} pratiche`} />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
           <div className="grid-2">
             <div className="card">
               <div className="card-head">
@@ -1212,9 +1234,6 @@
                       <th>{label}</th>
                       <th className="num">Pratiche</th>
                       <th className="num">Netto</th>
-                      <th className="num">Ore</th>
-                      <th className="num">€/h</th>
-                      <th className="num">Durata med</th>
                       <th className="num">% Tot</th>
                     </tr>
                   </thead>
@@ -1234,9 +1253,6 @@
                             <span><strong>{fmtEur(e.netto)}</strong></span>
                           </div>
                         </td>
-                        <td className="num">{e.ore > 0 ? fmtDec(e.ore, 0) : '—'}</td>
-                        <td className="num muted">{e.eurPerOra != null ? fmtEur(e.eurPerOra) : '—'}</td>
-                        <td className="num muted">{e.durataMedia != null ? fmtDays(e.durataMedia) : '—'}</td>
                         <td className="num muted">{total ? fmtPct(e.netto / total) : '—'}</td>
                       </tr>
                     ))}
@@ -1279,339 +1295,6 @@
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div>
-        </div>
-      );
-    };
-
-    // --- Tempi di lavorazione ---
-    const TempiView = ({ pratiche, onDrill }) => {
-      const withDuration = useMemo(() => pratiche.filter(p => p.durataGiorni != null), [pratiche]);
-      const outliers = useMemo(() => pratiche.filter(p => p.avvioIsOutlier).length, [pratiche]);
-      const aperte = useMemo(() => pratiche.filter(p => !p.isChiusa).length, [pratiche]);
-
-      const overallMean = withDuration.length ? withDuration.reduce((s,p) => s + p.durataGiorni, 0) / withDuration.length : null;
-      const sortedDur = withDuration.map(p => p.durataGiorni).sort((a,b) => a-b);
-      const overallMedian = sortedDur.length ? (sortedDur.length % 2 ? sortedDur[(sortedDur.length-1)/2] : (sortedDur[sortedDur.length/2-1] + sortedDur[sortedDur.length/2])/2) : null;
-      const p90 = sortedDur.length ? sortedDur[Math.min(sortedDur.length-1, Math.floor(sortedDur.length * 0.9))] : null;
-
-      // Histogram
-      const hist = useMemo(() => {
-        if (!withDuration.length) return { bins: [], maxCount: 0 };
-        const max = Math.max(...withDuration.map(p => p.durataGiorni));
-        const binSize = max > 500 ? 60 : max > 200 ? 30 : 15;
-        const nBins = Math.min(25, Math.ceil(max / binSize) + 1);
-        const bins = Array.from({length: nBins}, (_, i) => ({
-          from: i * binSize,
-          to: (i+1) * binSize - 1,
-          label: `${i*binSize}–${(i+1)*binSize}`,
-          count: 0,
-          pratiche: []
-        }));
-        for (const p of withDuration) {
-          const idx = Math.min(nBins - 1, Math.floor(p.durataGiorni / binSize));
-          bins[idx].count += 1;
-          bins[idx].pratiche.push(p);
-        }
-        return { bins, maxCount: Math.max(...bins.map(b => b.count), 1) };
-      }, [withDuration]);
-
-      // Per typology
-      const byTypology = useMemo(() => groupBy(withDuration, p => p.typology).sort((a,b) => (b.durataMedia || 0) - (a.durataMedia || 0)), [withDuration]);
-
-      // Per consultant
-      const byConsultant = useMemo(() => groupBy(withDuration, p => p.consultant).sort((a,b) => (b.durataMedia || 0) - (a.durataMedia || 0)), [withDuration]);
-
-      // Scatter: durata vs netto (top points)
-      const scatterData = useMemo(() => {
-        return withDuration.map(p => ({
-          x: p.durataGiorni, y: p.netto, id: p.idPratica, company: p.company, typology: p.typology, ore: p.ore
-        }));
-      }, [withDuration]);
-
-      return (
-        <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
-          <div className="kpi-grid">
-            <Kpi label="Pratiche chiuse non-outlier" value={fmtNum(withDuration.length)} sub={`/ ${fmtNum(pratiche.length)} totali`} variant="alt" />
-            <Kpi label="Durata media" value={fmtDays(overallMean)} variant="warn" />
-            <Kpi label="Durata mediana" value={fmtDays(overallMedian)} variant="neutral" />
-            <Kpi label="90° percentile" value={fmtDays(p90)} variant="violet" />
-            <Kpi label="Outlier (avvio 01/01/2000)" value={fmtNum(outliers)} variant={outliers > 0 ? 'danger' : 'neutral'} sub="esclusi da analisi" />
-            <Kpi label="Pratiche aperte" value={fmtNum(aperte)} variant="warn" sub="senza data chiusura" />
-          </div>
-
-          <div className="card">
-            <div className="card-head">
-              <div>
-                <h3 className="card-title">Distribuzione tempi di lavorazione</h3>
-                <div className="card-sub">Giorni da DATA AVVIO a DATA CHIUSURA · outlier esclusi · click sulle barre</div>
-              </div>
-              <span className="drill-hint">clic-attivo</span>
-            </div>
-            <div className="hist">
-              {hist.bins.map((b, i) => (
-                <div key={i}
-                     className="hist-bar"
-                     style={{
-                       height: (b.count / hist.maxCount * 100) + '%',
-                       background: i === 0 ? 'linear-gradient(180deg, #10b981, #059669)' : i < 3 ? 'linear-gradient(180deg, #3b82f6, #1e40af)' : i < 8 ? 'linear-gradient(180deg, #f59e0b, #c27803)' : 'linear-gradient(180deg, #ef4444, #c5291f)'
-                     }}
-                     title={`${b.label} gg · ${b.count} pratiche`}
-                     onClick={() => b.pratiche.length && onDrill({
-                       title: `Pratiche con durata ${b.label} giorni`,
-                       subtitle: `${b.count} pratiche nella fascia ${b.label} gg`,
-                       pratiche: b.pratiche
-                     })} />
-              ))}
-            </div>
-            <div className="hist-axis">
-              {hist.bins.map((b,i) => <span key={i}>{b.from}</span>)}
-            </div>
-          </div>
-
-          <div className="grid-2">
-            <div className="card">
-              <div className="card-head">
-                <div>
-                  <h3 className="card-title">Tempo medio per Typology</h3>
-                  <div className="card-sub">Ordinato per durata decrescente</div>
-                </div>
-              </div>
-              <ResponsiveContainer width="100%" height={Math.max(220, byTypology.length * 32)}>
-                <BarChart data={byTypology} layout="vertical" margin={{top: 5, right: 70, left: 10, bottom: 0}}
-                  onClick={(e) => { if (e && e.activeLabel) onDrill({
-                    title: `Typology: ${e.activeLabel} · tempi`,
-                    subtitle: `Pratiche chiuse non-outlier`,
-                    pratiche: withDuration.filter(p => p.typology === e.activeLabel)
-                  }); }}>
-                  <CartesianGrid horizontal={false} stroke="#eef2f6" />
-                  <XAxis type="number" tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={v => v + 'gg'} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="key" tick={{fontSize: 11, fill: '#1e293b'}} axisLine={false} tickLine={false} width={110} />
-                  <Tooltip content={<TT valueFmt={v => fmtDec(v, 0) + ' gg'} clickable />} />
-                  <Bar dataKey="durataMedia" radius={[0,4,4,0]} name="Durata media">
-                    {byTypology.map((e,i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
-                    <LabelList dataKey="durataMedia" position="right" formatter={v => fmtDec(v, 0) + 'gg'} style={{fontSize: 10, fill: '#334155', fontWeight: 600}} />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="card">
-              <div className="card-head">
-                <div>
-                  <h3 className="card-title">Tempo medio per Consulente</h3>
-                  <div className="card-sub">Solo pratiche con durata calcolata</div>
-                </div>
-              </div>
-              <ResponsiveContainer width="100%" height={Math.max(220, byConsultant.length * 32)}>
-                <BarChart data={byConsultant} layout="vertical" margin={{top: 5, right: 70, left: 10, bottom: 0}}
-                  onClick={(e) => { if (e && e.activeLabel) onDrill({
-                    title: `Consulente: ${e.activeLabel} · tempi`,
-                    subtitle: `Pratiche chiuse non-outlier`,
-                    pratiche: withDuration.filter(p => p.consultant === e.activeLabel)
-                  }); }}>
-                  <CartesianGrid horizontal={false} stroke="#eef2f6" />
-                  <XAxis type="number" tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={v => v + 'gg'} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="key" tick={{fontSize: 11, fill: '#1e293b'}} axisLine={false} tickLine={false} width={80} />
-                  <Tooltip content={<TT valueFmt={v => fmtDec(v, 0) + ' gg'} clickable />} />
-                  <Bar dataKey="durataMedia" radius={[0,4,4,0]} name="Durata media">
-                    {byConsultant.map((e,i) => <Cell key={i} fill={PALETTE[(i+3) % PALETTE.length]} />)}
-                    <LabelList dataKey="durataMedia" position="right" formatter={v => fmtDec(v, 0) + 'gg'} style={{fontSize: 10, fill: '#334155', fontWeight: 600}} />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="card-head">
-              <div>
-                <h3 className="card-title">Scatter · durata vs netto</h3>
-                <div className="card-sub">Ogni punto è una pratica chiusa · asse X = durata (gg), asse Y = netto (€)</div>
-              </div>
-            </div>
-            <ResponsiveContainer width="100%" height={380}>
-              <ScatterChart margin={{top: 10, right: 20, left: 0, bottom: 10}}>
-                <CartesianGrid stroke="#eef2f6" />
-                <XAxis type="number" dataKey="x" name="Durata" tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={v => v + 'gg'} axisLine={false} tickLine={false} label={{value: 'Durata (giorni)', position: 'insideBottom', offset: -2, fill: '#64748b', fontSize: 10}} />
-                <YAxis type="number" dataKey="y" name="Netto" tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
-                <Tooltip cursor={{ strokeDasharray: '3 3' }} content={({active, payload}) => {
-                  if (!active || !payload || !payload.length) return null;
-                  const d = payload[0].payload;
-                  return (
-                    <div className="custom-tt" style={{minWidth: 200}}>
-                      <div className="tt-title">{d.company}</div>
-                      <div className="tt-row"><span className="k">ID</span><span className="v mono" style={{fontSize: 10}}>{d.id}</span></div>
-                      <div className="tt-row"><span className="k">Typology</span><span className="v">{d.typology}</span></div>
-                      <div className="tt-row"><span className="k">Durata</span><span className="v">{fmtDec(d.x, 0)} gg</span></div>
-                      <div className="tt-row"><span className="k">Netto</span><span className="v">{fmtEur(d.y)}</span></div>
-                      <div className="tt-row"><span className="k">Ore</span><span className="v">{fmtDec(d.ore, 1)}</span></div>
-                    </div>
-                  );
-                }} />
-                <Scatter data={scatterData} fill="#3b82f6" fillOpacity={0.5} />
-                <ReferenceLine x={overallMean} stroke="#f59e0b" strokeDasharray="4 2" label={{value: `media ${fmtDec(overallMean,0)}gg`, position: 'top', fill: '#c27803', fontSize: 10}} />
-              </ScatterChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      );
-    };
-
-    // --- Ore & Produttività ---
-    const OreView = ({ pratiche, onDrill }) => {
-      const withOre = useMemo(() => pratiche.filter(p => p.ore > 0), [pratiche]);
-      const totOre = withOre.reduce((s,p) => s + p.ore, 0);
-      const totNetto = withOre.reduce((s,p) => s + p.netto, 0);
-      const eurOra = totOre > 0 ? totNetto / totOre : 0;
-
-      const byConsultant = useMemo(() => groupBy(withOre, p => p.consultant).sort((a,b) => b.ore - a.ore), [withOre]);
-      const byTypology = useMemo(() => groupBy(withOre, p => p.typology).sort((a,b) => b.ore - a.ore), [withOre]);
-
-      // Top 15 pratiche per ore
-      const topOre = useMemo(() => [...withOre].sort((a,b) => b.ore - a.ore).slice(0, 15), [withOre]);
-
-      return (
-        <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
-          <div className="kpi-grid">
-            <Kpi label="Ore totali" value={fmtDec(totOre, 0)} variant="violet" sub={`${withOre.length} pratiche con ore > 0`} />
-            <Kpi label="Netto pratiche con ore" value={fmtEur(totNetto)} variant="alt" />
-            <Kpi label="€/ora medio" value={fmtEur(eurOra)} variant="" sub="ricavo per ora lavorata" />
-            <Kpi label="Ore medie per pratica" value={fmtHours(withOre.length ? totOre / withOre.length : 0)} variant="neutral" />
-          </div>
-
-          <div className="grid-2">
-            <div className="card">
-              <div className="card-head">
-                <div>
-                  <h3 className="card-title">Ore per Consulente</h3>
-                  <div className="card-sub">Click per drill-down</div>
-                </div>
-                <span className="drill-hint">clic-attivo</span>
-              </div>
-              <ResponsiveContainer width="100%" height={Math.max(220, byConsultant.length * 36)}>
-                <BarChart data={byConsultant} layout="vertical" margin={{top: 5, right: 70, left: 10, bottom: 0}}
-                  onClick={(e) => { if (e && e.activeLabel) onDrill({
-                    title: `Consulente: ${e.activeLabel} · ore`,
-                    subtitle: `Pratiche con ore lavorate > 0`,
-                    pratiche: withOre.filter(p => p.consultant === e.activeLabel)
-                  }); }}>
-                  <CartesianGrid horizontal={false} stroke="#eef2f6" />
-                  <XAxis type="number" tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="key" tick={{fontSize: 11, fill: '#1e293b'}} axisLine={false} tickLine={false} width={80} />
-                  <Tooltip content={<TT valueFmt={v => fmtDec(v, 0) + ' h'} clickable />} />
-                  <Bar dataKey="ore" radius={[0,4,4,0]} name="Ore">
-                    {byConsultant.map((e,i) => <Cell key={i} fill={PALETTE[(i+2) % PALETTE.length]} />)}
-                    <LabelList dataKey="ore" position="right" formatter={v => fmtDec(v, 0) + 'h'} style={{fontSize: 10, fill: '#334155', fontWeight: 600}} />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="card">
-              <div className="card-head">
-                <div>
-                  <h3 className="card-title">Produttività €/h per Consulente</h3>
-                  <div className="card-sub">Netto / ore per consulente</div>
-                </div>
-              </div>
-              <ResponsiveContainer width="100%" height={Math.max(220, byConsultant.length * 36)}>
-                <BarChart data={[...byConsultant].sort((a,b) => (b.eurPerOra||0) - (a.eurPerOra||0))} layout="vertical" margin={{top: 5, right: 90, left: 10, bottom: 0}}>
-                  <CartesianGrid horizontal={false} stroke="#eef2f6" />
-                  <XAxis type="number" tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={fmtEurShort} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="key" tick={{fontSize: 11, fill: '#1e293b'}} axisLine={false} tickLine={false} width={80} />
-                  <Tooltip content={<TT valueFmt={fmtEur} />} />
-                  <Bar dataKey="eurPerOra" radius={[0,4,4,0]} name="€/h">
-                    {byConsultant.map((e,i) => <Cell key={i} fill={e.eurPerOra < 0 ? '#ef4444' : PALETTE[(i+5) % PALETTE.length]} />)}
-                    <LabelList dataKey="eurPerOra" position="right" formatter={fmtEurShort} style={{fontSize: 10, fill: '#334155', fontWeight: 600}} />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="card-head">
-              <div>
-                <h3 className="card-title">Ore e produttività per Typology</h3>
-                <div className="card-sub">Click su una riga per drill-down</div>
-              </div>
-            </div>
-            <div className="tbl-wrap">
-              <table className="tbl">
-                <thead>
-                  <tr>
-                    <th>Typology</th>
-                    <th className="num">Pratiche</th>
-                    <th className="num">Ore totali</th>
-                    <th className="num">Ore med.</th>
-                    <th className="num">Netto</th>
-                    <th className="num">€/h</th>
-                    <th className="num">Durata med.</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {byTypology.map((e,i) => (
-                    <tr key={i} className="clickable" onClick={() => onDrill({
-                      title: `Typology: ${e.key} · ore`,
-                      subtitle: `Pratiche con ore > 0`,
-                      pratiche: withOre.filter(p => p.typology === e.key)
-                    })}>
-                      <td>{e.key}</td>
-                      <td className="num">{fmtNum(e.count)}</td>
-                      <td className="num"><strong>{fmtDec(e.ore, 0)} h</strong></td>
-                      <td className="num muted">{fmtDec(e.avgOre, 1)} h</td>
-                      <td className="num">{fmtEur(e.netto)}</td>
-                      <td className="num"><strong>{e.eurPerOra != null ? fmtEur(e.eurPerOra) : '—'}</strong></td>
-                      <td className="num muted">{e.durataMedia != null ? fmtDays(e.durataMedia) : '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="card-head">
-              <div>
-                <h3 className="card-title">Top 15 pratiche per ore</h3>
-                <div className="card-sub">Le pratiche con maggior investimento di ore</div>
-              </div>
-            </div>
-            <div className="tbl-wrap">
-              <table className="tbl">
-                <thead>
-                  <tr>
-                    <th style={{width: 28}}>#</th>
-                    <th>ID Pratica</th>
-                    <th>Cliente</th>
-                    <th>Typology</th>
-                    <th>Tech</th>
-                    <th className="num">Ore</th>
-                    <th className="num">Netto</th>
-                    <th className="num">€/h</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {topOre.map((p,i) => (
-                    <tr key={i} className="clickable" onClick={() => onDrill({
-                      title: `Pratica: ${p.idPratica}`,
-                      subtitle: `Dettaglio singola pratica`,
-                      pratiche: [p]
-                    })}>
-                      <td className="rank">{i+1}</td>
-                      <td className="mono truncate" title={p.idPratica} style={{maxWidth: 260, fontSize: 11}}>{p.idPratica}</td>
-                      <td className="truncate" title={p.company} style={{maxWidth: 180}}>{p.company}</td>
-                      <td>{p.typology}</td>
-                      <td className="muted">{p.consultant || '—'}</td>
-                      <td className="num"><strong>{fmtDec(p.ore, 1)} h</strong></td>
-                      <td className="num"><strong>{fmtEur(p.netto)}</strong></td>
-                      <td className="num muted">{p.eurPerOra != null ? fmtEur(p.eurPerOra) : '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
           </div>
         </div>
@@ -1792,7 +1475,6 @@
                       <th>Cliente</th>
                       <th className="num">Prat.</th>
                       <th className="num">Netto</th>
-                      <th className="num">Ore</th>
                       <th className="num">Contributo</th>
                     </tr>
                   </thead>
@@ -1812,7 +1494,6 @@
                             <span><strong>{fmtEur(e.netto)}</strong></span>
                           </div>
                         </td>
-                        <td className="num muted">{e.ore > 0 ? fmtDec(e.ore, 0) + 'h' : '—'}</td>
                         <td className="num muted">{e.contributo ? fmtEurShort(e.contributo) : '—'}</td>
                       </tr>
                     ))}
@@ -1836,7 +1517,6 @@
                       <th>Gruppo</th>
                       <th className="num">Prat.</th>
                       <th className="num">Netto</th>
-                      <th className="num">Ore</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1850,7 +1530,6 @@
                         <td>{e.key}</td>
                         <td className="num">{fmtNum(e.count)}</td>
                         <td className="num"><strong>{fmtEur(e.netto)}</strong></td>
-                        <td className="num muted">{e.ore > 0 ? fmtDec(e.ore, 0) + 'h' : '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1869,19 +1548,17 @@
       const [page, setPage] = useState(1);
       const [search, setSearch] = useState('');
       const [onlyNc, setOnlyNc] = useState(false);
-      const [onlyOpen, setOnlyOpen] = useState(false);
       const perPage = 30;
 
       const filtered = useMemo(() => {
         let arr = pratiche;
         if (onlyNc) arr = arr.filter(p => p.hasNc);
-        if (onlyOpen) arr = arr.filter(p => !p.isChiusa);
         if (search) {
           const q = search.toLowerCase();
           arr = arr.filter(p => [p.idPratica, p.company, p.gruppo, p.typology, p.lines].filter(Boolean).some(v => String(v).toLowerCase().includes(q)));
         }
         return arr;
-      }, [pratiche, search, onlyNc, onlyOpen]);
+      }, [pratiche, search, onlyNc]);
 
       const sorted = useMemo(() => {
         const arr = [...filtered];
@@ -1909,12 +1586,10 @@
       };
 
       const exportCsv = () => {
-        const headers = ['ID PRATICA','COMPANY','GRUPPO','LINES','TYPOLOGY','FAMILY','SALES','CONSULTANT','FY','SERVICE MODE','N DOCS','N FTT','N NC','TOT FTT','TOT NC','NETTO','ORE','EUR/H','DATA AVVIO','DATA CHIUSURA','DURATA GG','OUTLIER','CONTRIBUTO','ULTIMA FTT DATA','ULTIMA FTT IMPORTO'];
+        const headers = ['ID PRATICA','COMPANY','GRUPPO','LINES','TYPOLOGY','FAMILY','SALES','CONSULTANT','FY','SERVICE MODE','N DOCS','N FTT','N NC','TOT FTT','TOT NC','NETTO','CONTRIBUTO','ULTIMA FTT DATA','ULTIMA FTT IMPORTO'];
         const rows = sorted.map(p => [
           p.idPratica, p.company, p.gruppo, p.lines, p.typology, p.family, p.sales, p.consultant, p.fy, p.serviceMode,
-          p.nDocs, p.nFtt, p.nNc, p.totFtt, p.totNc, p.netto, p.ore, p.eurPerOra != null ? p.eurPerOra : '',
-          isoDate(p.dataAvvio), isoDate(p.dataChiusura), p.durataGiorni != null ? p.durataGiorni : '',
-          p.avvioIsOutlier ? 'SI' : 'NO', p.contributo,
+          p.nDocs, p.nFtt, p.nNc, p.totFtt, p.totNc, p.netto, p.contributo,
           p.lastFttDate ? isoDate(p.lastFttDate) : '', p.lastFtt ? p.lastFtt.invoiced : ''
         ]);
         const esc = (v) => {
@@ -1945,7 +1620,6 @@
               <input type="text" placeholder="Cerca cliente, pratica, typology..." value={search} onChange={e => setSearch(e.target.value)}
                      style={{padding: '5px 10px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 11, outline: 'none', minWidth: 220}} />
               <button className={`chip ${onlyNc ? 'active' : ''}`} onClick={() => setOnlyNc(!onlyNc)}>Con NC</button>
-              <button className={`chip ${onlyOpen ? 'active' : ''}`} onClick={() => setOnlyOpen(!onlyOpen)}>Aperte</button>
               <button className="btn btn-outline btn-sm" onClick={exportCsv}>
                 <Icon name="download" size={12} /> Esporta CSV
               </button>
@@ -1963,15 +1637,10 @@
                   <th className="sortable" onClick={() => setSort('fy')}>FY<SI col="fy" /></th>
                   <th className="num sortable" onClick={() => setSort('nDocs')}>Doc<SI col="nDocs" /></th>
                   <th className="num sortable" onClick={() => setSort('netto')}>Netto<SI col="netto" /></th>
-                  <th className="num sortable" onClick={() => setSort('ore')}>Ore<SI col="ore" /></th>
-                  <th className="num sortable" onClick={() => setSort('eurPerOra')}>€/h<SI col="eurPerOra" /></th>
-                  <th className="sortable" onClick={() => setSort('dataAvvio')}>Avvio<SI col="dataAvvio" /></th>
-                  <th className="sortable" onClick={() => setSort('dataChiusura')}>Chiusura<SI col="dataChiusura" /></th>
-                  <th className="num sortable" onClick={() => setSort('durataGiorni')}>Durata<SI col="durataGiorni" /></th>
                 </tr>
               </thead>
               <tbody>
-                {pageData.length === 0 && <tr><td colSpan="13" className="empty">Nessuna pratica con i filtri attivi</td></tr>}
+                {pageData.length === 0 && <tr><td colSpan="8" className="empty">Nessuna pratica con i filtri attivi</td></tr>}
                 {pageData.map((p, i) => (
                   <tr key={i} className="clickable" onClick={() => onDrill({
                     title: `Pratica: ${p.idPratica}`,
@@ -1989,14 +1658,6 @@
                       {p.hasNc && <span className="badge nc" style={{marginLeft: 4}}>NC</span>}
                     </td>
                     <td className="num"><strong className={p.netto < 0 ? 'neg' : ''}>{fmtEur(p.netto)}</strong></td>
-                    <td className="num">{p.ore > 0 ? fmtDec(p.ore, 1) : '—'}</td>
-                    <td className="num muted">{p.eurPerOra != null ? fmtEur(p.eurPerOra) : '—'}</td>
-                    <td className="muted">
-                      {p.dataAvvio ? formatDate(p.dataAvvio) : '—'}
-                      {p.avvioIsOutlier && <span className="badge outlier" style={{marginLeft: 4}}>out</span>}
-                    </td>
-                    <td className="muted">{p.dataChiusura ? formatDate(p.dataChiusura) : <span className="badge open">aperta</span>}</td>
-                    <td className="num">{p.durataGiorni != null ? fmtDays(p.durataGiorni) : '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -2046,11 +1707,11 @@
       };
 
       const exportCsv = () => {
-        const headers = ['FY','TIPO DOC','COMPANY','GRUPPO','LINES','LINES PRECISO','ID PRATICA','SALES','CONSULTANT','TYPOLOGY','FAMILY','SERVICE MODE','TYPE FRANCE','MONTH','INVOICED','ORE LAVORATE','DATA AVVIO','DATA CHIUSURA','CONTRIBUTO'];
+        const headers = ['FY','TIPO DOC','COMPANY','GRUPPO','LINES','LINES PRECISO','ID PRATICA','SALES','CONSULTANT','TYPOLOGY','FAMILY','SERVICE MODE','TYPE FRANCE','MONTH','INVOICED','CONTRIBUTO'];
         const rows = sorted.map(d => [
           d.fy, d.tipoDoc, d.company, d.gruppo, d.lines, d.linesPreciso, d.idPratica,
           d.sales, d.consultant, d.typology, d.family, d.serviceMode, d.typeFrance,
-          isoDate(d.month), d.invoiced, d.ore, isoDate(d.dataAvvio), isoDate(d.dataChiusura), d.contributo
+          isoDate(d.month), d.invoiced, d.contributo
         ]);
         const esc = (v) => {
           if (v == null) return '';
@@ -2135,7 +1796,7 @@
 
     const DEFAULT_FILTERS = {
       fy: [], sales: [], consultant: [], typology: [], family: [], serviceMode: [], newBack: [], tipoDoc: [],
-      monthFrom: '', monthTo: '', search: '', onlyWithOre: false, excludeOutliers: false
+      monthFrom: '', monthTo: '', search: ''
     };
 
     function App() {
@@ -2198,8 +1859,6 @@
           if (filters.tipoDoc.length && !filters.tipoDoc.includes(r.tipoDoc)) return false;
           if (mFrom && r.month && r.month < mFrom) return false;
           if (mToEnd && r.month && r.month > mToEnd) return false;
-          if (filters.onlyWithOre && (!r.ore || r.ore <= 0)) return false;
-          if (filters.excludeOutliers && isOutlier(r.dataAvvio)) return false;
           if (q) {
             const hay = [r.company, r.gruppo, r.lines, r.linesPreciso, r.idPratica].filter(Boolean).join(' ').toLowerCase();
             if (!hay.includes(q)) return false;
@@ -2216,20 +1875,14 @@
         const totNetto = pratiche.reduce((s,p) => s + p.netto, 0);
         const totFtt = filteredDocs.filter(d => d.tipoDoc === 'FTT').reduce((s,d) => s + d.invoiced, 0);
         const totNc = filteredDocs.filter(d => d.tipoDoc === 'NC').reduce((s,d) => s + d.invoiced, 0);
-        const totOre = pratiche.reduce((s,p) => s + (p.ore || 0), 0);
-        const eurOra = totOre > 0 ? totNetto / totOre : 0;
         const conNc = pratiche.filter(p => p.hasNc).length;
-        const chiuse = pratiche.filter(p => p.isChiusa).length;
-        const durate = pratiche.filter(p => p.durataGiorni != null).map(p => p.durataGiorni);
-        const durMedia = durate.length ? durate.reduce((a,b) => a+b, 0) / durate.length : null;
-        return { totNetto, totFtt, totNc, totOre, eurOra, conNc, chiuse, durMedia, nPratiche: pratiche.length, nDocs: filteredDocs.length };
+        return { totNetto, totFtt, totNc, conNc, nPratiche: pratiche.length, nDocs: filteredDocs.length };
       }, [pratiche, filteredDocs]);
 
       const activeFilterCount = [
         filters.fy.length, filters.sales.length, filters.consultant.length, filters.typology.length,
         filters.family.length, filters.serviceMode.length, filters.newBack.length, filters.tipoDoc.length,
         filters.monthFrom ? 1 : 0, filters.monthTo ? 1 : 0, filters.search ? 1 : 0,
-        filters.onlyWithOre ? 1 : 0, filters.excludeOutliers ? 1 : 0
       ].reduce((a,b) => a+b, 0);
 
       const resetFilters = () => setFilters(DEFAULT_FILTERS);
@@ -2254,8 +1907,6 @@
       const tabs = [
         { id: 'overview', label: 'Overview', icon: 'chart' },
         { id: 'pratiche', label: 'Pratiche', icon: 'briefcase' },
-        { id: 'tempi', label: 'Tempi lavorazione', icon: 'hourglass' },
-        { id: 'ore', label: 'Ore & €/h', icon: 'clock' },
         { id: 'documenti', label: 'FTT & NC', icon: 'receipt' },
         { id: 'sales', label: 'Sales', icon: 'trend' },
         { id: 'consultants', label: 'Consulenti', icon: 'users' },
@@ -2340,8 +1991,7 @@
               <div className="filter-group">
                 <span className="filter-label">Opzioni</span>
                 <div style={{display: 'flex', gap: 4}}>
-                  <button className={`chip ${filters.onlyWithOre ? 'active' : ''}`} onClick={() => setFilters(f => ({...f, onlyWithOre: !f.onlyWithOre}))}>Solo con ore</button>
-                  <button className={`chip ${filters.excludeOutliers ? 'active' : ''}`} onClick={() => setFilters(f => ({...f, excludeOutliers: !f.excludeOutliers}))}>Escludi outlier</button>
+                  <span className="chip active">Perimetro economico</span>
                 </div>
               </div>
               <div className="filter-actions">
@@ -2370,8 +2020,6 @@
               <Kpi label="Netto (FTT-NC)" value={fmtEur(kpis.totNetto)} sub={`${fmtNum(kpis.nPratiche)} pratiche · ${fmtNum(kpis.nDocs)} doc`} />
               <Kpi label="Totale FTT" value={fmtEurShort(kpis.totFtt)} variant="alt" subVariant="pos" sub="fatture emesse" />
               <Kpi label="Totale NC" value={fmtEurShort(kpis.totNc)} variant="danger" subVariant="neg" sub={`${fmtNum(kpis.conNc)} pratiche con NC`} />
-              <Kpi label="Ore lavorate" value={fmtDec(kpis.totOre, 0) + ' h'} variant="violet" sub={kpis.totOre > 0 ? `${fmtEur(kpis.eurOra)}/h medio` : null} />
-              <Kpi label="Durata media" value={fmtDays(kpis.durMedia)} variant="warn" sub={`${fmtNum(kpis.chiuse)}/${fmtNum(kpis.nPratiche)} chiuse`} />
               <Kpi label="Contributi ottenuti" value={fmtEurShort(pratiche.reduce((s,p) => s + (p.contributo||0), 0))} variant="neutral" />
             </div>
 
@@ -2385,8 +2033,6 @@
               <>
                 {tab === 'overview' && <OverviewView pratiche={pratiche} docs={filteredDocs} onDrill={setModal} />}
                 {tab === 'pratiche' && <PraticheView pratiche={pratiche} onDrill={setModal} />}
-                {tab === 'tempi' && <TempiView pratiche={pratiche} onDrill={setModal} />}
-                {tab === 'ore' && <OreView pratiche={pratiche} onDrill={setModal} />}
                 {tab === 'documenti' && <DocumentiView pratiche={pratiche} docs={filteredDocs} onDrill={setModal} />}
                 {tab === 'sales' && <RankingView pratiche={pratiche} dim="sales" label="Sales" onDrill={setModal} />}
                 {tab === 'consultants' && <RankingView pratiche={pratiche} dim="consultant" label="Consulente" onDrill={setModal} />}
